@@ -1,6 +1,6 @@
 {
   "name": "@atomiqlabs/sdk",
-  "version": "1.0.0-beta43",
+  "version": "1.1.0",
   "description": "atomiq labs SDK for cross-chain swaps between smart chains and bitcoin",
   "main": "./dist/index.js",
   "types:": "./dist/index.d.ts",
@@ -21,9 +21,9 @@
   "author": "adambor",
   "license": "ISC",
   "dependencies": {
-    "crosslightning-base": "7.0.0-beta1",
-    "crosslightning-sdk-base": "10.0.5-beta46",
-    "crosslightning-solana": "7.0.0-beta4"
+    "crosslightning-base": "7.1.0",
+    "crosslightning-sdk-base": "10.1.0",
+    "crosslightning-solana": "7.1.0"
   },
   "devDependencies": {
     "@types/bn.js": "5.1.5",
