@@ -1,4 +1,4 @@
 export * from "./MultichainSwapper";
-export * from "crosslightning-base";
-export * from "crosslightning-sdk-base";
-export * from "crosslightning-solana";
+export * from "@atomiqlabs/base";
+export * from "@atomiqlabs/sdk-lib";
+export * from "@atomiqlabs/chain-solana";

@@ -4,15 +4,15 @@ import {
     SolanaSwapData,
     SolanaSwapProgram,
     StoredDataAccount
-} from "crosslightning-solana";
+} from "@atomiqlabs/chain-solana";
 import {
     BitcoinNetwork,
     CtorChainData
-} from "crosslightning-sdk-base";
-import {BitcoinRpc, IStorageManager} from "crosslightning-base";
+} from "@atomiqlabs/sdk-lib";
+import {BitcoinRpc, IStorageManager} from "@atomiqlabs/base";
 import {Connection} from "@solana/web3.js";
 import {SolanaChains} from "./SolanaChains";
-import {SolanaChainEventsBrowser} from "crosslightning-solana/dist/solana/events/SolanaChainEventsBrowser";
+import {SolanaChainEventsBrowser} from "@atomiqlabs/chain-solana/dist/solana/events/SolanaChainEventsBrowser";
 import {SdkChain} from "../ChainInitializer";
 import {MultichainSwapperOptions} from "../../MultichainSwapper";
 

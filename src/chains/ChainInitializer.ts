@@ -1,5 +1,5 @@
-import {BitcoinRpc, ChainType} from "crosslightning-base";
-import {BitcoinNetwork, CtorChainData, SwapperOptions} from "crosslightning-sdk-base";
+import {BitcoinRpc, ChainType} from "@atomiqlabs/base";
+import {BitcoinNetwork, CtorChainData, SwapperOptions} from "@atomiqlabs/sdk-lib";
 import {AssetData} from "../SmartChainAssets";
 
 

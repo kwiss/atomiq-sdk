@@ -1,4 +1,4 @@
-import {BitcoinNetwork} from "crosslightning-sdk-base";
+import {BitcoinNetwork} from "@atomiqlabs/sdk-lib";
 
 export const SolanaChains = {
     [BitcoinNetwork.TESTNET]: {

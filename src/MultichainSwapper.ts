@@ -8,13 +8,13 @@ import {
     SCToken,
     Swapper,
     SwapperOptions, Token
-} from "crosslightning-sdk-base";
-import {objectMap} from "crosslightning-sdk-base/dist/utils/Utils";
+} from "@atomiqlabs/sdk-lib";
+import {objectMap} from "@atomiqlabs/sdk-lib/dist/utils/Utils";
 import {SdkSolana, SdkSolanaType} from "./chains/solana/SolanaChainInitializer";
 import {SdkChain} from "./chains/ChainInitializer";
 import * as BN from "bn.js";
 import {SmartChainAssets} from "./SmartChainAssets";
-import {IStorageManager, StorageObject} from "crosslightning-base";
+import {IStorageManager, StorageObject} from "@atomiqlabs/base";
 
 type Chains = {
     "SOLANA": SdkSolanaType
