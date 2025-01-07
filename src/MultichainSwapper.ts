@@ -15,6 +15,8 @@ import {SdkChain} from "./chains/ChainInitializer";
 import * as BN from "bn.js";
 import {SmartChainAssets} from "./SmartChainAssets";
 import {IStorageManager, StorageObject} from "@atomiqlabs/base";
+import {SwapperWithChain} from "@atomiqlabs/sdk-lib/dist/swaps/SwapperWithChain";
+import {SwapperWithSigner} from "@atomiqlabs/sdk-lib/dist/swaps/SwapperWithSigner";
 
 type Chains = {
     "SOLANA": SdkSolanaType
@@ -26,7 +28,7 @@ const Chains: {
     "SOLANA": SdkSolana
 } as const;
 
-type SdkMultichain = { [C in keyof Chains]: Chains[C]["ChainType"] };
+export type SdkMultichain = { [C in keyof Chains]: Chains[C]["ChainType"] };
 
 export type MultichainSwapperOptions = SwapperOptions & {
     chains: {
@@ -132,3 +134,6 @@ export const TokenResolver: {
         };
     })
 };
+
+export type SolanaSwapper = SwapperWithChain<SdkMultichain, "SOLANA">;
+export type SolanaSwapperWithSigner = SwapperWithSigner<SdkMultichain, "SOLANA">;

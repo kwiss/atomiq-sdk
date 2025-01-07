@@ -4,8 +4,6 @@ import {SolanaKeypairWallet, SolanaSigner} from "crosslightning-solana";
 import {Keypair} from "@solana/web3.js";
 import * as BN from "bn.js";
 
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
-
 const solanaRpc = "https://api.mainnet-beta.solana.com";
 
 async function main() {
