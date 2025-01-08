@@ -1,13 +1,13 @@
-import {SolanaSwapperWithSigner, MultichainSwapper, Tokens} from "..";
+import {SolanaKeypairWallet, SolanaSigner, SolanaSwapperWithSigner, MultichainSwapper, Tokens} from "../";
 import {Keypair} from "@solana/web3.js";
 import * as BN from "bn.js";
-import {SolanaKeypairWallet, SolanaSigner} from "@atomiqlabs/chain-solana";
 
 const solanaRpc = "https://api.mainnet-beta.solana.com";
 
 let solanaSwapper: SolanaSwapperWithSigner;
 
 async function setupSwapper() {
+    //Setup the multichain swapper
     const swapper: MultichainSwapper = new MultichainSwapper({
         chains: {
             SOLANA: {
@@ -18,12 +18,12 @@ async function setupSwapper() {
     await swapper.init();
 
     //Create new random keypair wallet
-    const wallet = new SolanaKeypairWallet(Keypair.generate());
-
+    const wallet = new SolanaKeypairWallet(Keypair.generate()); //This is just a dummy, you should load the wallet from file, or etc.
     //Or in React, using solana wallet adapter
     //const wallet = useAnchorWallet();
 
     const signer: SolanaSigner = new SolanaSigner(wallet);
+    //Extract a Solana specific swapper (used for swapping between Solana and Bitcoin) with a defined signer
     solanaSwapper = swapper.withChain("SOLANA").withSigner(signer);
 }
 
@@ -39,7 +39,7 @@ async function createToBtcSwap() {
         toToken,
         amount,
         exactIn,
-        recipientBtcAddress //BTC address of the recipient
+        recipientBtcAddress
     );
 
     //Input amounts
@@ -106,6 +106,9 @@ async function createFromBtcSwap() {
             console.log("Tx received: "+txId+" confirmations: "+confirmations+"/"+targetConfirmations+" ETA: "+transactionETAms+" ms");
         }
     ); //This returns as soon as the transaction is accepted
+
+    //Swap will get automatically claimed by the watchtowers
+    await swap.waitTillClaimed();
 }
 
 async function main() {
