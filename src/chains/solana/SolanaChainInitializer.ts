@@ -26,8 +26,6 @@ type SolanaSwapperOptions = {
     btcRelayContract?: string,
     swapContract?: string,
 
-    trustedIntermediary?: string,
-
     fees?: SolanaFees
 };
 
@@ -53,14 +51,14 @@ function getSolanaCtorData(options: MultichainSwapperOptions, bitcoinRpc: Bitcoi
         swapContract,
         chainEvents,
         swapDataConstructor: SolanaSwapData,
-        defaultTrustedIntermediaryUrl: options.chains.SOLANA.trustedIntermediary ?? SolanaChains[network].trustedSwapForGasUrl,
         //These are defined here to keep the data from old SolLightning-sdk, not needed for other chains
         storage: {
             toBtc: options.storageCtor("SOLv4-"+options.bitcoinNetwork+"-Swaps-ToBTC"),
             toBtcLn: options.storageCtor("SOLv4-"+options.bitcoinNetwork+"-Swaps-ToBTCLN"),
             fromBtc: options.storageCtor("SOLv4-"+options.bitcoinNetwork+"-Swaps-FromBTC"),
             fromBtcLn: options.storageCtor("SOLv4-"+options.bitcoinNetwork+"-Swaps-FromBTCLN"),
-            lnForGas: options.storageCtor("SOLv4-"+options.bitcoinNetwork+"-Swaps-LnForGas")
+            lnForGas: options.storageCtor("SOLv4-"+options.bitcoinNetwork+"-Swaps-LnForGas"),
+            onchainForGas: options.storageCtor("SOLv4-"+options.bitcoinNetwork+"-Swaps-OnchainForGas")
         }
     }
 }

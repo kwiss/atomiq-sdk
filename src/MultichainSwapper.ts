@@ -1,13 +1,15 @@
 import {
-    BitcoinNetwork, BitcoinTokens,
-    BtcToken, IndexedDBStorageManager, isToken,
+    BitcoinNetwork,
+    BitcoinTokens,
+    BtcToken,
+    IndexedDBStorageManager,
     MempoolApi,
     MempoolBitcoinRpc,
     RedundantSwapPrice,
     RedundantSwapPriceAssets,
     SCToken,
     Swapper,
-    SwapperOptions, Token
+    SwapperOptions
 } from "@atomiqlabs/sdk-lib";
 import {objectMap} from "@atomiqlabs/sdk-lib/dist/utils/Utils";
 import {SdkSolana, SdkSolanaType} from "./chains/solana/SolanaChainInitializer";
@@ -45,6 +47,10 @@ export class MultichainSwapper extends Swapper<SdkMultichain> {
         options.bitcoinNetwork ??= BitcoinNetwork.MAINNET;
         options.storagePrefix ??= "atomiqsdk-"+options.bitcoinNetwork;
         options.storageCtor ??= (name: string) => new IndexedDBStorageManager(name);
+
+        options.defaultTrustedIntermediaryUrl ??= options.bitcoinNetwork===BitcoinNetwork.MAINNET ?
+            "https://node3.gethopa.com:34100" :
+            "https://node3.gethopa.com:24100";
 
         options.registryUrl ??= options.bitcoinNetwork===BitcoinNetwork.MAINNET ?
             "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-mainnet.json?ref=main" :
