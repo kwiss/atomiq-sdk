@@ -1,6 +1,6 @@
 {
   "name": "@atomiqlabs/sdk",
-  "version": "1.3.9",
+  "version": "1.3.10",
   "description": "atomiq labs SDK for cross-chain swaps between smart chains and bitcoin",
   "main": "./dist/index.js",
   "types:": "./dist/index.d.ts",
@@ -22,7 +22,7 @@
   "license": "ISC",
   "dependencies": {
     "@atomiqlabs/base": "7.2.2",
-    "@atomiqlabs/chain-solana": "7.3.7",
+    "@atomiqlabs/chain-solana": "7.3.8",
     "@atomiqlabs/sdk-lib": "10.3.8"
   },
   "devDependencies": {
