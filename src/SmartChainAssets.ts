@@ -3,11 +3,11 @@ export const SmartChainAssets = {
     WBTC: {
         pricing: {
             binancePair: "WBTCBTC",
-            okxPair: "$fixed-1",
+            okxPair: null,
             coinGeckoCoinId: "wrapped-bitcoin",
             coinPaprikaCoinId: "wbtc-wrapped-bitcoin"
         },
-        name: "Wrapped BTC"
+        name: "Wrapped BTC (Wormhole)"
     },
     USDC: {
         pricing: {
