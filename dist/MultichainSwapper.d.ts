@@ -14,7 +14,7 @@ declare const Chains: {
     [C in keyof Chains]: SdkChain<Chains[C]>;
 };
 export type SdkMultichain = {
-    [C in keyof Chains]: Chains[C]["ChainType"];
+    [C in keyof Chains]?: Chains[C]["ChainType"];
 };
 export type MultichainSwapperOptions = SwapperOptions & {
     chains: {

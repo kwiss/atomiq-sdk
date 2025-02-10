@@ -33,7 +33,7 @@ const Chains: {
     "STARKNET": SdkStarknet
 } as const;
 
-export type SdkMultichain = { [C in keyof Chains]: Chains[C]["ChainType"] };
+export type SdkMultichain = { [C in keyof Chains]?: Chains[C]["ChainType"] };
 
 export type MultichainSwapperOptions = SwapperOptions & {
     chains: {
@@ -82,8 +82,13 @@ export class MultichainSwapper extends Swapper<SdkMultichain> {
         });
 
         const ctorChainData = objectMap(Chains, (value, key) => {
+            if(options.chains[key]==null) return null;
             return value.getCtorData(options, bitcoinRpc, options.bitcoinNetwork);
         });
+
+        for(let key in ctorChainData) {
+            if(ctorChainData[key]==null) delete ctorChainData[key];
+        }
 
         super(
             bitcoinRpc,

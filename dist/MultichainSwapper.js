@@ -39,8 +39,14 @@ class MultichainSwapper extends sdk_lib_1.Swapper {
                 ticker, name: assetData.name }));
         });
         const ctorChainData = (0, Utils_1.objectMap)(Chains, (value, key) => {
+            if (options.chains[key] == null)
+                return null;
             return value.getCtorData(options, bitcoinRpc, options.bitcoinNetwork);
         });
+        for (let key in ctorChainData) {
+            if (ctorChainData[key] == null)
+                delete ctorChainData[key];
+        }
         super(bitcoinRpc, ctorChainData, sdk_lib_1.RedundantSwapPrice.createFromTokenMap((_f = options.pricingFeeDifferencePPM) !== null && _f !== void 0 ? _f : new BN(10000), pricingAssets), pricingAssets, options);
     }
 }
