@@ -44,6 +44,25 @@ export const SmartChainAssets = {
             coinPaprikaCoinId: "bonk-bonk"
         },
         name: "Bonk"
+    },
+
+    ETH: {
+        pricing: {
+            binancePair: "ETHBTC",
+            okxPair: "ETH-BTC",
+            coinGeckoCoinId: "ethereum",
+            coinPaprikaCoinId: "eth-ethereum"
+        },
+        name: "Ethereum"
+    },
+    STRK: {
+        pricing: {
+            binancePair: "STRKUSDT;!BTCUSDT",
+            okxPair: "STRK-USDT;!BTC-USDT",
+            coinGeckoCoinId: "starknet",
+            coinPaprikaCoinId: "strk-starknet"
+        },
+        name: "Starknet"
     }
 } as const;
 

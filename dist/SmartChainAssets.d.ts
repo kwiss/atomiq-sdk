@@ -44,6 +44,24 @@ export declare const SmartChainAssets: {
         };
         readonly name: "Bonk";
     };
+    readonly ETH: {
+        readonly pricing: {
+            readonly binancePair: "ETHBTC";
+            readonly okxPair: "ETH-BTC";
+            readonly coinGeckoCoinId: "ethereum";
+            readonly coinPaprikaCoinId: "eth-ethereum";
+        };
+        readonly name: "Ethereum";
+    };
+    readonly STRK: {
+        readonly pricing: {
+            readonly binancePair: "STRKUSDT;!BTCUSDT";
+            readonly okxPair: "STRK-USDT;!BTC-USDT";
+            readonly coinGeckoCoinId: "starknet";
+            readonly coinPaprikaCoinId: "strk-starknet";
+        };
+        readonly name: "Starknet";
+    };
 };
 export type SmartChainAssetTickers = keyof typeof SmartChainAssets;
 export type AssetData = {

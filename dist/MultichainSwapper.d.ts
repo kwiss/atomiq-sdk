@@ -5,8 +5,10 @@ import * as BN from "bn.js";
 import { IStorageManager, StorageObject } from "@atomiqlabs/base";
 import { SwapperWithChain } from "@atomiqlabs/sdk-lib/dist/swaps/SwapperWithChain";
 import { SwapperWithSigner } from "@atomiqlabs/sdk-lib/dist/swaps/SwapperWithSigner";
+import { SdkStarknetType } from "./chains/starknet/StarknetChainInitializer";
 type Chains = {
     "SOLANA": SdkSolanaType;
+    "STARKNET": SdkStarknetType;
 };
 declare const Chains: {
     [C in keyof Chains]: SdkChain<Chains[C]>;
@@ -16,7 +18,7 @@ export type SdkMultichain = {
 };
 export type MultichainSwapperOptions = SwapperOptions & {
     chains: {
-        [C in keyof Chains]: Chains[C]["Options"];
+        [C in keyof Chains]?: Chains[C]["Options"];
     };
 } & {
     storageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>;
@@ -42,4 +44,6 @@ export declare const TokenResolver: {
 };
 export type SolanaSwapper = SwapperWithChain<SdkMultichain, "SOLANA">;
 export type SolanaSwapperWithSigner = SwapperWithSigner<SdkMultichain, "SOLANA">;
+export type StarknetSwapper = SwapperWithChain<SdkMultichain, "STARKNET">;
+export type StarknetSwapperWithSigner = SwapperWithSigner<SdkMultichain, "STARKNET">;
 export {};

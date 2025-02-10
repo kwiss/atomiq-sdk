@@ -19,22 +19,25 @@ import {SmartChainAssets} from "./SmartChainAssets";
 import {IStorageManager, StorageObject} from "@atomiqlabs/base";
 import {SwapperWithChain} from "@atomiqlabs/sdk-lib/dist/swaps/SwapperWithChain";
 import {SwapperWithSigner} from "@atomiqlabs/sdk-lib/dist/swaps/SwapperWithSigner";
+import {SdkStarknet, SdkStarknetType} from "./chains/starknet/StarknetChainInitializer";
 
 type Chains = {
-    "SOLANA": SdkSolanaType
+    "SOLANA": SdkSolanaType,
+    "STARKNET": SdkStarknetType
 };
 
 const Chains: {
     [C in keyof Chains]: SdkChain<Chains[C]>
 } = {
-    "SOLANA": SdkSolana
+    "SOLANA": SdkSolana,
+    "STARKNET": SdkStarknet
 } as const;
 
 export type SdkMultichain = { [C in keyof Chains]: Chains[C]["ChainType"] };
 
 export type MultichainSwapperOptions = SwapperOptions & {
     chains: {
-        [C in keyof Chains]: Chains[C]["Options"]
+        [C in keyof Chains]?: Chains[C]["Options"]
     }
 } & {
     storageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>,
@@ -143,3 +146,6 @@ export const TokenResolver: {
 
 export type SolanaSwapper = SwapperWithChain<SdkMultichain, "SOLANA">;
 export type SolanaSwapperWithSigner = SwapperWithSigner<SdkMultichain, "SOLANA">;
+
+export type StarknetSwapper = SwapperWithChain<SdkMultichain, "STARKNET">;
+export type StarknetSwapperWithSigner = SwapperWithSigner<SdkMultichain, "STARKNET">;

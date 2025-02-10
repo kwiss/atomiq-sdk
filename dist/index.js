@@ -18,3 +18,4 @@ __exportStar(require("./MultichainSwapper"), exports);
 __exportStar(require("@atomiqlabs/base"), exports);
 __exportStar(require("@atomiqlabs/sdk-lib"), exports);
 __exportStar(require("@atomiqlabs/chain-solana"), exports);
+__exportStar(require("@atomiqlabs/chain-starknet"), exports);

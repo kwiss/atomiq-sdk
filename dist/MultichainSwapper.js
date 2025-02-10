@@ -6,8 +6,10 @@ const Utils_1 = require("@atomiqlabs/sdk-lib/dist/utils/Utils");
 const SolanaChainInitializer_1 = require("./chains/solana/SolanaChainInitializer");
 const BN = require("bn.js");
 const SmartChainAssets_1 = require("./SmartChainAssets");
+const StarknetChainInitializer_1 = require("./chains/starknet/StarknetChainInitializer");
 const Chains = {
-    "SOLANA": SolanaChainInitializer_1.SdkSolana
+    "SOLANA": SolanaChainInitializer_1.SdkSolana,
+    "STARKNET": StarknetChainInitializer_1.SdkStarknet
 };
 class MultichainSwapper extends sdk_lib_1.Swapper {
     constructor(options) {
