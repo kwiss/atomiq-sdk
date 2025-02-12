@@ -68,5 +68,6 @@ export type AssetData = {
     [ticker in SmartChainAssetTickers]?: {
         address: string;
         decimals: number;
+        displayDecimals?: number;
     };
 };

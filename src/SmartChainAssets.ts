@@ -71,6 +71,7 @@ export type SmartChainAssetTickers = keyof typeof SmartChainAssets;
 export type AssetData = {
     [ticker in SmartChainAssetTickers]?: {
         address: string,
-        decimals: number
+        decimals: number,
+        displayDecimals?: number
     }
 };

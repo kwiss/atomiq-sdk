@@ -59,6 +59,7 @@ exports.Tokens = Object.assign(Object.assign({}, (0, Utils_1.objectMap)(Chains, 
             address: assetData.address,
             name: SmartChainAssets_1.SmartChainAssets[ticker].name,
             decimals: assetData.decimals,
+            displayDecimals: assetData.displayDecimals,
             ticker
         };
     });
@@ -72,7 +73,8 @@ exports.TokenResolver = Object.assign({}, (0, Utils_1.objectMap)(Chains, (value,
             address: value.assets[ticker].address,
             ticker,
             name: SmartChainAssets_1.SmartChainAssets[ticker].name,
-            decimals: value.assets[ticker].decimals
+            decimals: value.assets[ticker].decimals,
+            displayDecimals: value.assets[ticker].displayDecimals
         };
     }
     return {

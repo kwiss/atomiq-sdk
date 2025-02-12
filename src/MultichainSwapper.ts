@@ -119,6 +119,7 @@ export const Tokens: {
                 address: assetData.address,
                 name: SmartChainAssets[ticker].name,
                 decimals: assetData.decimals,
+                displayDecimals: assetData.displayDecimals,
                 ticker
             }
         });
@@ -140,7 +141,8 @@ export const TokenResolver: {
                 address: value.assets[ticker].address,
                 ticker,
                 name: SmartChainAssets[ticker].name,
-                decimals: value.assets[ticker].decimals
+                decimals: value.assets[ticker].decimals,
+                displayDecimals: value.assets[ticker].displayDecimals
             }
         }
         return {
