@@ -1,4 +1,4 @@
-import { BtcToken, SCToken, Swapper, SwapperOptions } from "@atomiqlabs/sdk-lib";
+import { BtcToken, MempoolApi, SCToken, Swapper, SwapperOptions } from "@atomiqlabs/sdk-lib";
 import { SdkSolanaType } from "./chains/solana/SolanaChainInitializer";
 import { SdkChain } from "./chains/ChainInitializer";
 import * as BN from "bn.js";
@@ -23,6 +23,7 @@ export type MultichainSwapperOptions = SwapperOptions & {
 } & {
     storageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>;
     pricingFeeDifferencePPM?: BN;
+    mempoolApi?: MempoolApi;
 };
 export declare class MultichainSwapper extends Swapper<SdkMultichain> {
     constructor(options: MultichainSwapperOptions);

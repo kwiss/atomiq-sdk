@@ -13,7 +13,7 @@ const Chains = {
 };
 class MultichainSwapper extends sdk_lib_1.Swapper {
     constructor(options) {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e, _f, _g;
         (_a = options.bitcoinNetwork) !== null && _a !== void 0 ? _a : (options.bitcoinNetwork = sdk_lib_1.BitcoinNetwork.MAINNET);
         (_b = options.storagePrefix) !== null && _b !== void 0 ? _b : (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork);
         (_c = options.storageCtor) !== null && _c !== void 0 ? _c : (options.storageCtor = (name) => new sdk_lib_1.IndexedDBStorageManager(name));
@@ -23,9 +23,19 @@ class MultichainSwapper extends sdk_lib_1.Swapper {
         (_e = options.registryUrl) !== null && _e !== void 0 ? _e : (options.registryUrl = options.bitcoinNetwork === sdk_lib_1.BitcoinNetwork.MAINNET ?
             "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-mainnet.json?ref=main" :
             "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry.json?ref=main");
-        const mempoolApi = new sdk_lib_1.MempoolApi(options.bitcoinNetwork === sdk_lib_1.BitcoinNetwork.TESTNET ?
-            "https://mempool.space/testnet/api/" :
-            "https://mempool.space/api/");
+        const mempoolApi = (_f = options.mempoolApi) !== null && _f !== void 0 ? _f : new sdk_lib_1.MempoolApi(options.bitcoinNetwork === sdk_lib_1.BitcoinNetwork.TESTNET ?
+            [
+                "https://mempool.space/testnet/api/",
+                "https://mempool.fra.mempool.space/testnet/api/",
+                "https://mempool.va1.mempool.space/testnet/api/",
+                "https://mempool.tk7.mempool.space/testnet/api/"
+            ] :
+            [
+                "https://mempool.space/api/",
+                "https://mempool.fra.mempool.space/api/",
+                "https://mempool.va1.mempool.space/api/",
+                "https://mempool.tk7.mempool.space/api/"
+            ]);
         const bitcoinRpc = new sdk_lib_1.MempoolBitcoinRpc(mempoolApi);
         const pricingAssets = [];
         Object.keys(SmartChainAssets_1.SmartChainAssets).forEach((ticker) => {
@@ -47,7 +57,7 @@ class MultichainSwapper extends sdk_lib_1.Swapper {
             if (ctorChainData[key] == null)
                 delete ctorChainData[key];
         }
-        super(bitcoinRpc, ctorChainData, sdk_lib_1.RedundantSwapPrice.createFromTokenMap((_f = options.pricingFeeDifferencePPM) !== null && _f !== void 0 ? _f : new BN(10000), pricingAssets), pricingAssets, options);
+        super(bitcoinRpc, ctorChainData, sdk_lib_1.RedundantSwapPrice.createFromTokenMap((_g = options.pricingFeeDifferencePPM) !== null && _g !== void 0 ? _g : new BN(10000), pricingAssets), pricingAssets, options);
     }
 }
 exports.MultichainSwapper = MultichainSwapper;
