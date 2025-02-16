@@ -38,7 +38,8 @@ export type MultichainSwapperOptions = SwapperOptions & {
     }
 } & {
     storageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>,
-    pricingFeeDifferencePPM?: BN
+    pricingFeeDifferencePPM?: BN,
+    mempoolApi?: MempoolApi
 };
 
 export class MultichainSwapper extends Swapper<SdkMultichain> {
@@ -56,10 +57,20 @@ export class MultichainSwapper extends Swapper<SdkMultichain> {
             "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-mainnet.json?ref=main" :
             "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry.json?ref=main";
 
-        const mempoolApi = new MempoolApi(
+        const mempoolApi = options.mempoolApi ?? new MempoolApi(
             options.bitcoinNetwork===BitcoinNetwork.TESTNET ?
-                "https://mempool.space/testnet/api/" :
-                "https://mempool.space/api/"
+                [
+                    "https://mempool.space/testnet/api/",
+                    "https://mempool.fra.mempool.space/testnet/api/",
+                    "https://mempool.va1.mempool.space/testnet/api/",
+                    "https://mempool.tk7.mempool.space/testnet/api/"
+                ] :
+                [
+                    "https://mempool.space/api/",
+                    "https://mempool.fra.mempool.space/api/",
+                    "https://mempool.va1.mempool.space/api/",
+                    "https://mempool.tk7.mempool.space/api/"
+                ]
         );
         const bitcoinRpc = new MempoolBitcoinRpc(mempoolApi);
 
