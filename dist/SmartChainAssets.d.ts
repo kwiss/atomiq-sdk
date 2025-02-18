@@ -64,10 +64,3 @@ export declare const SmartChainAssets: {
     };
 };
 export type SmartChainAssetTickers = keyof typeof SmartChainAssets;
-export type AssetData = {
-    [ticker in SmartChainAssetTickers]?: {
-        address: string;
-        decimals: number;
-        displayDecimals?: number;
-    };
-};
