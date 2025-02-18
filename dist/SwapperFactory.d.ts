@@ -36,7 +36,7 @@ export type MultichainSwapperOptions<T extends ChainInitializer<any, any, any>[]
     mempoolApi?: MempoolApi;
 };
 export declare class SwapperFactory<T extends ChainInitializer<any, any, any>[]> {
-    initializers: T;
+    readonly initializers: T;
     Tokens: GetAllTokens<T> & {
         BITCOIN: {
             BTC: BtcToken<false>;

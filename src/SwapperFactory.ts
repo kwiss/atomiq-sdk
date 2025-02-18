@@ -72,7 +72,6 @@ export type MultichainSwapperOptions<T extends ChainInitializer<any, any, any>[]
 
 export class SwapperFactory<T extends ChainInitializer<any, any, any>[]> {
 
-    initializers: T;
     Tokens: GetAllTokens<T> & {
         BITCOIN: {
             BTC: BtcToken<false>,
@@ -83,7 +82,7 @@ export class SwapperFactory<T extends ChainInitializer<any, any, any>[]> {
     } as any;
     TokenResolver: GetAllTokenResolvers<T> = {} as any;
 
-    constructor(initializers: T) {
+    constructor(readonly initializers: T) {
         this.initializers = initializers;
         initializers.forEach(initializer => {
             const addressMap: {[tokenAddress: string]: SCToken} = {};

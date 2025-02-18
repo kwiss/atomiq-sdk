@@ -7,6 +7,7 @@ const sdk_lib_1 = require("@atomiqlabs/sdk-lib");
 const SmartChainAssets_1 = require("./SmartChainAssets");
 class SwapperFactory {
     constructor(initializers) {
+        this.initializers = initializers;
         this.Tokens = {
             BITCOIN: sdk_lib_1.BitcoinTokens
         };
