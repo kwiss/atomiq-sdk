@@ -155,7 +155,7 @@ export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]
 
         const chains: {[key in T[number]["chainId"]]: ChainData<any>} = {} as any;
         for(let {initializer, chainId} of this.initializers) {
-            if(options.chains[chainId]==null) return null;
+            if(options.chains[chainId]==null) continue;
             chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.storageCtor) as any;
         }
 

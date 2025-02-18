@@ -72,7 +72,7 @@ class SwapperFactory {
         const chains = {};
         for (let { initializer, chainId } of this.initializers) {
             if (options.chains[chainId] == null)
-                return null;
+                continue;
             chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.storageCtor);
         }
         return new sdk_lib_1.Swapper(bitcoinRpc, chains, sdk_lib_1.RedundantSwapPrice.createFromTokenMap((_g = options.pricingFeeDifferencePPM) !== null && _g !== void 0 ? _g : new BN(10000), pricingAssets), pricingAssets, options);
