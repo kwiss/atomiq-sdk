@@ -28,14 +28,14 @@ type ChainTypeDict<T extends ChainInitializer<any, any, any>> = {
     [K in T["chainId"]]: T["chainType"];
 };
 type ToMultichain<T extends readonly ChainInitializer<any, any, any>[]> = (T extends readonly [infer First extends ChainInitializer<any, any, any>, ...infer Rest extends ChainInitializer<any, any, any>[]] ? ChainTypeDict<First> & ToMultichain<Rest> : {});
-export type MultichainSwapperOptions<T extends ChainInitializer<any, any, any>[]> = SwapperOptions & {
+export type MultichainSwapperOptions<T extends readonly ChainInitializer<any, any, any>[]> = SwapperOptions & {
     chains: GetAllOptions<T>;
 } & {
     storageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>;
     pricingFeeDifferencePPM?: BN;
     mempoolApi?: MempoolApi;
 };
-export declare class SwapperFactory<T extends ChainInitializer<any, any, any>[]> {
+export declare class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]> {
     readonly initializers: T;
     Tokens: GetAllTokens<T> & {
         BITCOIN: {

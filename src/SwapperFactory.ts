@@ -62,7 +62,7 @@ type ToMultichain<T extends readonly ChainInitializer<any, any, any>[]> =
         ? ChainTypeDict<First> & ToMultichain<Rest>
         : {});
 
-export type MultichainSwapperOptions<T extends ChainInitializer<any, any, any>[]> = SwapperOptions & {
+export type MultichainSwapperOptions<T extends readonly ChainInitializer<any, any, any>[]> = SwapperOptions & {
     chains: GetAllOptions<T>
 } & {
     storageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>,
@@ -70,7 +70,7 @@ export type MultichainSwapperOptions<T extends ChainInitializer<any, any, any>[]
     mempoolApi?: MempoolApi
 };
 
-export class SwapperFactory<T extends ChainInitializer<any, any, any>[]> {
+export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]> {
 
     Tokens: GetAllTokens<T> & {
         BITCOIN: {
