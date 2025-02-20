@@ -55,6 +55,7 @@ export declare const SmartChainAssets: {
             readonly okxPair: "ETH-BTC";
             readonly coinGeckoCoinId: "ethereum";
             readonly coinPaprikaCoinId: "eth-ethereum";
+            readonly krakenPair: "XETHXXBT";
         };
         readonly name: "Ethereum";
     };
@@ -64,6 +65,7 @@ export declare const SmartChainAssets: {
             readonly okxPair: "STRK-USDT;!BTC-USDT";
             readonly coinGeckoCoinId: "starknet";
             readonly coinPaprikaCoinId: "strk-starknet";
+            readonly krakenPair: "STRKUSD;!XXBTZUSD";
         };
         readonly name: "Starknet";
     };

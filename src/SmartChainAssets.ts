@@ -56,7 +56,8 @@ export const SmartChainAssets = {
             binancePair: "ETHBTC",
             okxPair: "ETH-BTC",
             coinGeckoCoinId: "ethereum",
-            coinPaprikaCoinId: "eth-ethereum"
+            coinPaprikaCoinId: "eth-ethereum",
+            krakenPair: "XETHXXBT"
         },
         name: "Ethereum"
     },
@@ -65,7 +66,8 @@ export const SmartChainAssets = {
             binancePair: "STRKUSDT;!BTCUSDT",
             okxPair: "STRK-USDT;!BTC-USDT",
             coinGeckoCoinId: "starknet",
-            coinPaprikaCoinId: "strk-starknet"
+            coinPaprikaCoinId: "strk-starknet",
+            krakenPair: "STRKUSD;!XXBTZUSD"
         },
         name: "Starknet"
     }
