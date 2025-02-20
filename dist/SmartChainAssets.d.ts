@@ -5,6 +5,7 @@ export declare const SmartChainAssets: {
             readonly okxPair: any;
             readonly coinGeckoCoinId: "wrapped-bitcoin";
             readonly coinPaprikaCoinId: "wbtc-wrapped-bitcoin";
+            readonly krakenPair: "WBTCXBT";
         };
         readonly name: "Wrapped BTC (Wormhole)";
     };
@@ -14,6 +15,7 @@ export declare const SmartChainAssets: {
             readonly okxPair: "!BTC-USDC";
             readonly coinGeckoCoinId: "usd-coin";
             readonly coinPaprikaCoinId: "usdc-usd-coin";
+            readonly krakenPair: "!XBTUSDC";
         };
         readonly name: "USD Circle";
     };
@@ -23,6 +25,7 @@ export declare const SmartChainAssets: {
             readonly okxPair: "!BTC-USDT";
             readonly coinGeckoCoinId: "tether";
             readonly coinPaprikaCoinId: "usdt-tether";
+            readonly krakenPair: "!XBTUSDT";
         };
         readonly name: "Tether USD";
     };
@@ -32,15 +35,17 @@ export declare const SmartChainAssets: {
             readonly okxPair: "SOL-BTC";
             readonly coinGeckoCoinId: "solana";
             readonly coinPaprikaCoinId: "sol-solana";
+            readonly krakenPair: "SOLXBT";
         };
         readonly name: "Solana";
     };
     readonly BONK: {
         readonly pricing: {
             readonly binancePair: "BONKUSDC;!BTCUSDC";
-            readonly okxPair: any;
+            readonly okxPair: "BONK-USDT;!BTC-USDT";
             readonly coinGeckoCoinId: "bonk";
             readonly coinPaprikaCoinId: "bonk-bonk";
+            readonly krakenPair: "BONKUSD;!XXBTZUSD";
         };
         readonly name: "Bonk";
     };

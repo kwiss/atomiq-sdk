@@ -7,7 +7,8 @@ exports.SmartChainAssets = {
             binancePair: "WBTCBTC",
             okxPair: null,
             coinGeckoCoinId: "wrapped-bitcoin",
-            coinPaprikaCoinId: "wbtc-wrapped-bitcoin"
+            coinPaprikaCoinId: "wbtc-wrapped-bitcoin",
+            krakenPair: "WBTCXBT"
         },
         name: "Wrapped BTC (Wormhole)"
     },
@@ -16,7 +17,8 @@ exports.SmartChainAssets = {
             binancePair: "!BTCUSDC",
             okxPair: "!BTC-USDC",
             coinGeckoCoinId: "usd-coin",
-            coinPaprikaCoinId: "usdc-usd-coin"
+            coinPaprikaCoinId: "usdc-usd-coin",
+            krakenPair: "!XBTUSDC"
         },
         name: "USD Circle"
     },
@@ -25,7 +27,8 @@ exports.SmartChainAssets = {
             binancePair: "!BTCUSDT",
             okxPair: "!BTC-USDT",
             coinGeckoCoinId: "tether",
-            coinPaprikaCoinId: "usdt-tether"
+            coinPaprikaCoinId: "usdt-tether",
+            krakenPair: "!XBTUSDT"
         },
         name: "Tether USD"
     },
@@ -34,16 +37,18 @@ exports.SmartChainAssets = {
             binancePair: "SOLBTC",
             okxPair: "SOL-BTC",
             coinGeckoCoinId: "solana",
-            coinPaprikaCoinId: "sol-solana"
+            coinPaprikaCoinId: "sol-solana",
+            krakenPair: "SOLXBT"
         },
         name: "Solana"
     },
     BONK: {
         pricing: {
             binancePair: "BONKUSDC;!BTCUSDC",
-            okxPair: null,
+            okxPair: "BONK-USDT;!BTC-USDT",
             coinGeckoCoinId: "bonk",
-            coinPaprikaCoinId: "bonk-bonk"
+            coinPaprikaCoinId: "bonk-bonk",
+            krakenPair: "BONKUSD;!XXBTZUSD"
         },
         name: "Bonk"
     },
