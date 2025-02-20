@@ -1,12 +1,13 @@
-
-export const SmartChainAssets = {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SmartChainAssets = void 0;
+exports.SmartChainAssets = {
     WBTC: {
         pricing: {
             binancePair: "WBTCBTC",
             okxPair: null,
             coinGeckoCoinId: "wrapped-bitcoin",
-            coinPaprikaCoinId: "wbtc-wrapped-bitcoin",
-            krakenPair: "WBTCXBT"
+            coinPaprikaCoinId: "wbtc-wrapped-bitcoin"
         },
         name: "Wrapped BTC (Wormhole)"
     },
@@ -15,8 +16,7 @@ export const SmartChainAssets = {
             binancePair: "!BTCUSDC",
             okxPair: "!BTC-USDC",
             coinGeckoCoinId: "usd-coin",
-            coinPaprikaCoinId: "usdc-usd-coin",
-            krakenPair: "!XBTUSDC"
+            coinPaprikaCoinId: "usdc-usd-coin"
         },
         name: "USD Circle"
     },
@@ -25,8 +25,7 @@ export const SmartChainAssets = {
             binancePair: "!BTCUSDT",
             okxPair: "!BTC-USDT",
             coinGeckoCoinId: "tether",
-            coinPaprikaCoinId: "usdt-tether",
-            krakenPair: "!XBTUSDT"
+            coinPaprikaCoinId: "usdt-tether"
         },
         name: "Tether USD"
     },
@@ -35,22 +34,19 @@ export const SmartChainAssets = {
             binancePair: "SOLBTC",
             okxPair: "SOL-BTC",
             coinGeckoCoinId: "solana",
-            coinPaprikaCoinId: "sol-solana",
-            krakenPair: "SOLXBT"
+            coinPaprikaCoinId: "sol-solana"
         },
         name: "Solana"
     },
     BONK: {
         pricing: {
             binancePair: "BONKUSDC;!BTCUSDC",
-            okxPair: "BONK-USDT;!BTC-USDT",
+            okxPair: null,
             coinGeckoCoinId: "bonk",
-            coinPaprikaCoinId: "bonk-bonk",
-            krakenPair: "BONKUSD;!XXBTZUSD"
+            coinPaprikaCoinId: "bonk-bonk"
         },
         name: "Bonk"
     },
-
     ETH: {
         pricing: {
             binancePair: "ETHBTC",
@@ -69,6 +65,4 @@ export const SmartChainAssets = {
         },
         name: "Starknet"
     }
-} as const;
-
-export type SmartChainAssetTickers = keyof typeof SmartChainAssets;
+};
