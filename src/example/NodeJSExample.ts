@@ -1,8 +1,8 @@
 import {fromHumanReadableString, SwapperFactory, timeoutSignal} from "../";
 import * as BN from "bn.js";
 import {FileSystemStorageManager} from "@atomiqlabs/sdk-lib/dist/fs-storage";
-import {StarknetInitializer} from "@atomiqlabs/chain-starknet";
-import {SolanaInitializer} from "@atomiqlabs/chain-solana";
+import {StarknetInitializer, StarknetInitializerType} from "@atomiqlabs/chain-starknet";
+import {SolanaInitializer, SolanaInitializerType} from "@atomiqlabs/chain-solana";
 
 const solanaRpc = "https://api.mainnet-beta.solana.com";
 const starknetRpc = "https://starknet-mainnet.public.blastapi.io/rpc/v0_7";
@@ -11,7 +11,7 @@ const starknetRpc = "https://starknet-mainnet.public.blastapi.io/rpc/v0_7";
 // we want to support and only install those specific libraries, here Solana & Starknet are used
 //NOTE: The "as const" keyword is important here as to let typescript properly infer the
 // generic type of the SwapperFactory, allowing you to have code-completion for Tokens and TokenResolver
-const Factory = new SwapperFactory([SolanaInitializer, StarknetInitializer] as const);
+const Factory = new SwapperFactory<[SolanaInitializerType, StarknetInitializerType]>([SolanaInitializer, StarknetInitializer] as const);
 const Tokens = Factory.Tokens;
 
 async function setupSwapper() {

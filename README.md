@@ -1,20 +1,37 @@
 # atomiqlabs SDK
 
-A typescript multichain client for atomiqlabs trustlesss cross-chain swaps.
+A typescript multichain client for atomiqlabs trustlesss cross-chain swaps. Enables trustless swaps between smart chains (Solana, EVM, Starknet, etc.) and bitcoin (on-chain - L1 and lightning network - L2).
 
 ## Installation
 ```
-npm install @atomiqlabs/sdk
+npm install github:atomiqlabs/atomiq-sdk
+```
+
+## Installing chain-specific connectors
+
+You can install only the chain-specific connectors that your project requires
+
+```
+npm install github:atomiqlabs/atomiq-chain-solana
+npm install github:atomiqlabs/atomiq-chain-starknet
 ```
 
 ## How to use?
 
 ### Preparations
 
-Set Solana RPC URL to use
+Set Solana & Starknet RPC URL to use
 
 ```typescript
 const solanaRpc = "https://api.mainnet-beta.solana.com";
+const starknetRpc = "https://starknet-mainnet.public.blastapi.io/rpc/v0_7";
+```
+
+Create swapper factory, here we can pick and choose which chains we want to have supported in the SDK, ensure the "as const" keyword is used such that the typescript compiler can properly infer the types.
+
+```typescript
+const Factory = new SwapperFactory<[SolanaInitializerType, StarknetInitializerType]>([SolanaInitializer, StarknetInitializer] as const);
+const Tokens = Factory.Tokens; //Get the supported tokens for all the specified chains.
 ```
 
 #### Browser
@@ -22,10 +39,13 @@ const solanaRpc = "https://api.mainnet-beta.solana.com";
 This uses browser's Indexed DB by default
 
 ```typescript
-const swapper: MultichainSwapper = new MultichainSwapper({
+const swapper = Factory.newSwapper({
     chains: {
         SOLANA: {
-            rpcUrl: solanaRpc
+            rpcUrl: solanaRpc //You can also pass Connection object here
+        },
+        STARKNET: {
+            rpcUrl: starknetRpc //You can also pass Provider object here
         }
     }
 });
@@ -33,13 +53,16 @@ const swapper: MultichainSwapper = new MultichainSwapper({
 
 #### NodeJS
 
-For NodeJS we need to explicitly use filsystem storage
+For NodeJS we need to explicitly use filesystem storage
 
 ```typescript
-const swapper: MultichainSwapper = new MultichainSwapper({
+const swapper = Factory.newSwapper({
     chains: {
         SOLANA: {
-            rpcUrl: solanaRpc
+            rpcUrl: solanaRpc //You can also pass Connection object here
+        },
+        STARKNET: {
+            rpcUrl: starknetRpc //You can also pass Provider object here
         }
     },
     //The following line is important for running on backend node.js,
@@ -56,12 +79,17 @@ const anchorWallet = useAnchorWallet();
 const wallet = new SolanaSigner(anchorWallet);
 ```
 
+```typescript
+//Browser, using get-starknet
+const swo = await connect();
+const wallet = new StarknetSigner(new WalletAccount(starknetRpc, swo));
+```
+
 or
 
 ```typescript
-//Creating a wallet from scratch
-const signer = Keypair.fromSecretKey(_privateKey); //Or Keypair.generate() to generate new one
-const wallet = new SolanaSigner(signer);
+//Creating a random signer
+const wallet = swapper.randomSigner<"SOLANA">("SOLANA");
 ```
 
 ### Initialization
@@ -79,12 +107,12 @@ Now we have the multichain swapper initialized
 To make it easier to do swaps between bitcoin and a specific chain we can extract a chain-specific swapper, and also set a signer.
 
 ```typescript
-const solanaSwapper = swapper.withChain("SOLANA").withSigner(signer);
+const solanaSwapper = swapper.withChain<"SOLANA">("SOLANA").withSigner(signer);
 ```
 
 ### Bitcoin on-chain swaps
 
-#### Swap Solana -> Bitcoin on-chain
+#### Swap Smart chain -> Bitcoin on-chain
 
 Initiating & executing the swap.
 
@@ -142,13 +170,13 @@ if(!result) {
 - ToBTCSwapState.REFUNDABLE = 4
   - Swap was initiated but counterparty failed to process it, the user can now refund his funds
 
-#### Swap Bitcoin on-chain -> Solana
+#### Swap Bitcoin on-chain -> Smart chain
 
 Initiating & executing the swap.
 
 ```typescript
 const _exactIn = true; //exactIn = true, so we specify the input amount
-const _amount = new BN(10000); //Amount in BTC base units - sats
+const _amount = fromHumanReadableString("0.0001", Tokens.BITCOIN.BTC); //Amount in BTC base units - sats, we can also use a utility function here
 
 //Create the swap: swapping _amount of satoshis of Bitcoin on-chain to SOL
 const swap = await solanaSwapper.create(
@@ -194,10 +222,17 @@ try {
             //Callback for transaction updates
         }
     );
-    //Swap will get automatically claimed by the watchtowers
-    await swap.waitTillClaimed();
 } catch(e) {
-    //Error occurred while waiting for payment
+    //Error occurred while waiting for payment, this is most likely due to network errors
+    return;
+}
+
+//Swap should get automatically claimed by the watchtowers, if not we can call swap.claim() ourselves
+try {
+    await swap.waitTillClaimed(timeoutSignal(30*1000));
+} catch (e) {
+    //Claim ourselves when automatic claim doesn't happen in 30 seconds
+    await swap.claim();
 }
 ```
 
@@ -220,7 +255,7 @@ try {
 
 ### Bitcoin lightning network swaps
 
-#### Swap Solana -> Bitcoin lightning network
+#### Swap Smart chain -> Bitcoin lightning network
 
 ```typescript
 //Destination lightning network invoice, amount needs to be part of the invoice!
@@ -275,7 +310,7 @@ if(!result) {
 - ToBTCSwapState.REFUNDABLE = 4
     - Swap was initiated but counterparty failed to process it, the user can now refund his funds
 
-#### Swap Bitcoin lightning network -> Solana
+#### Swap Bitcoin lightning network -> Smart chain
 ```typescript
 const _exactIn = true; //exactIn = true, so we specify the input amount
 const _amount = new BN(10000); //Amount in BTC base units - sats
@@ -301,8 +336,11 @@ const fee: string = swap.getFee().amountInSrcToken.amount; //Human readable fee 
 try {
     //Wait for the lightning payment to arrive
     await swap.waitForPayment();
-    //Claim the swap funds - this will initiate 2 Solana transactions
+    //Claim the swap funds - this will initiate 2 transactions
     await swap.commitAndClaim();
+    //Or for e.g. starknet which doesn't support signing 2 transactions at once
+    // await swap.commit();
+    // await swap.claim();
 } catch(e) {
     //Error occurred while waiting for payment
 }
@@ -399,7 +437,7 @@ if(isLNURL) {
 }
 ```
 
-#### Swap Solana -> Bitcoin lightning network
+#### Swap Smart chain -> Bitcoin lightning network
 ```typescript
 const _lnurlOrIdentifier: string = "lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhkx6rfvdjx2ctvxyesuk0a27"; //Destination LNURL-pay or readable identifier
 const _exactIn = false; //exactIn = false, so we specify the output amount
@@ -443,7 +481,7 @@ if(!result) {
 }
 ```
 
-#### Swap Bitcoin lightning network -> Solana
+#### Swap Bitcoin lightning network -> Smart chain
 ```typescript
 const _lnurl: string = "lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhkx6rfvdjx2ctvxyesuk0a27"; //Destination LNURL-pay or readable identifier
 const _exactIn = true; //exactIn = true, so we specify the input amount
@@ -466,8 +504,11 @@ const fee: string = swap.getFee().amountInSrcToken.amount; //Human readable fee 
 try {
     //Submit the withdraw request & wait for the payment to arrive
     await swap.waitForPayment();
-    //Claim the swap funds - this will initiate 2 Solana transactions
+    //Claim the swap funds - this will initiate 2 transactions
     await swap.commitAndClaim();
+    //Or for e.g. starknet which doesn't support signing 2 transactions at once
+    // await swap.commit();
+    // await swap.claim();
 } catch(e) {
     //Error occurred while waiting for payment
 }
@@ -481,7 +522,7 @@ You can refund the swaps in one of two cases:
 This call can be checked on every startup and periodically every few minutes.
 ```typescript
 //Get the swaps
-const refundableSwaps = await swapper.getRefundableSwaps();
+const refundableSwaps = await solanaSwapper.getRefundableSwaps();
 //Refund all the swaps
 for(let swap of refundableSwaps) {
     await swap.refund();
@@ -493,9 +534,10 @@ Returns swaps that are ready to be claimed by the client, this can happen if cli
 
 ```typescript
 //Get the swaps
-const claimableSwaps = await swapper.getClaimableSwaps();
+const claimableSwaps = await solanaSwapper.getClaimableSwaps();
 //Claim all the claimable swaps
 for(let swap of claimableSwaps) {
-    await swap.commitAndClaim();
+    if(swap.canCommit()) await swap.commit(); //This is for Bitcoin (lightning) -> Smart chain swaps, where commit & claim procedure might be needed
+    await swap.claim();
 }
 ```
