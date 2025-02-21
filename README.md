@@ -47,7 +47,8 @@ const swapper = Factory.newSwapper({
         STARKNET: {
             rpcUrl: starknetRpc //You can also pass Provider object here
         }
-    }
+    },
+    bitcoinNetwork: BitcoinNetwork.TESTNET //or BitcoinNetwork.MAINNET - this also sets the network to use for Solana (solana devnet for bitcoin testnet) & Starknet (sepolia for bitcoin testnet)
 });
 ```
 
@@ -65,6 +66,7 @@ const swapper = Factory.newSwapper({
             rpcUrl: starknetRpc //You can also pass Provider object here
         }
     },
+    bitcoinNetwork: BitcoinNetwork.TESTNET, //or BitcoinNetwork.MAINNET - this also sets the network to use for Solana (solana devnet for bitcoin testnet) & Starknet (sepolia for bitcoin testnet)
     //The following line is important for running on backend node.js,
     // because the SDK by default uses browser's Indexed DB
     storageCtor: (name: string) => new FileSystemStorageManager(name)
