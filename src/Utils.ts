@@ -1,12 +1,11 @@
 import {toDecimal, fromDecimal, Token} from "@atomiqlabs/sdk-lib";
-import * as BN from "bn.js";
 
-export function toHumanReadableString(amount: BN, currencySpec: Token): string {
+export function toHumanReadableString(amount: bigint, currencySpec: Token): string {
     if(amount==null) return null;
     return toDecimal(amount, currencySpec.decimals, undefined, currencySpec.displayDecimals);
 }
 
-export function fromHumanReadableString(amount: string, currencySpec: Token): BN {
+export function fromHumanReadableString(amount: string, currencySpec: Token): bigint {
     if(amount==="" || amount==null) return null;
     return fromDecimal(amount, currencySpec.decimals);
 }

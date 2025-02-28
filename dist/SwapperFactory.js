@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SwapperFactory = void 0;
 const base_1 = require("@atomiqlabs/base");
-const BN = require("bn.js");
 const sdk_lib_1 = require("@atomiqlabs/sdk-lib");
 const SmartChainAssets_1 = require("./SmartChainAssets");
 class SwapperFactory {
@@ -34,17 +33,16 @@ class SwapperFactory {
         });
     }
     newSwapper(options) {
-        var _a, _b, _c, _d, _e, _f, _g;
-        (_a = options.bitcoinNetwork) !== null && _a !== void 0 ? _a : (options.bitcoinNetwork = base_1.BitcoinNetwork.MAINNET);
-        (_b = options.storagePrefix) !== null && _b !== void 0 ? _b : (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork);
-        (_c = options.storageCtor) !== null && _c !== void 0 ? _c : (options.storageCtor = (name) => new sdk_lib_1.IndexedDBStorageManager(name));
-        (_d = options.defaultTrustedIntermediaryUrl) !== null && _d !== void 0 ? _d : (options.defaultTrustedIntermediaryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
+        options.bitcoinNetwork ?? (options.bitcoinNetwork = base_1.BitcoinNetwork.MAINNET);
+        options.storagePrefix ?? (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork);
+        options.storageCtor ?? (options.storageCtor = (name) => new sdk_lib_1.IndexedDBStorageManager(name));
+        options.defaultTrustedIntermediaryUrl ?? (options.defaultTrustedIntermediaryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
             "https://node3.gethopa.com:34100" :
             "https://node3.gethopa.com:24100");
-        (_e = options.registryUrl) !== null && _e !== void 0 ? _e : (options.registryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
+        options.registryUrl ?? (options.registryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
             "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-mainnet.json?ref=main" :
             "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry.json?ref=main");
-        const mempoolApi = (_f = options.mempoolApi) !== null && _f !== void 0 ? _f : new sdk_lib_1.MempoolApi(options.bitcoinNetwork === base_1.BitcoinNetwork.TESTNET ?
+        const mempoolApi = options.mempoolApi ?? new sdk_lib_1.MempoolApi(options.bitcoinNetwork === base_1.BitcoinNetwork.TESTNET ?
             [
                 "https://mempool.space/testnet/api/",
                 "https://mempool.fra.mempool.space/testnet/api/",
@@ -66,8 +64,12 @@ class SwapperFactory {
                     chains[chainId] = tokens[ticker];
             }
             const assetData = SmartChainAssets_1.SmartChainAssets[ticker];
-            pricingAssets.push(Object.assign(Object.assign({}, assetData.pricing), { chains,
-                ticker, name: assetData.name }));
+            pricingAssets.push({
+                ...assetData.pricing,
+                chains,
+                ticker,
+                name: assetData.name
+            });
         });
         const chains = {};
         for (let { initializer, chainId } of this.initializers) {
@@ -75,7 +77,7 @@ class SwapperFactory {
                 continue;
             chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.storageCtor);
         }
-        return new sdk_lib_1.Swapper(bitcoinRpc, chains, sdk_lib_1.RedundantSwapPrice.createFromTokenMap((_g = options.pricingFeeDifferencePPM) !== null && _g !== void 0 ? _g : new BN(10000), pricingAssets), pricingAssets, options);
+        return new sdk_lib_1.Swapper(bitcoinRpc, chains, sdk_lib_1.RedundantSwapPrice.createFromTokenMap(options.pricingFeeDifferencePPM ?? 10000n, pricingAssets), pricingAssets, options);
     }
 }
 exports.SwapperFactory = SwapperFactory;

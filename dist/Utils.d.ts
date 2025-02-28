@@ -1,7 +1,6 @@
 import { Token } from "@atomiqlabs/sdk-lib";
-import * as BN from "bn.js";
-export declare function toHumanReadableString(amount: BN, currencySpec: Token): string;
-export declare function fromHumanReadableString(amount: string, currencySpec: Token): BN;
+export declare function toHumanReadableString(amount: bigint, currencySpec: Token): string;
+export declare function fromHumanReadableString(amount: string, currencySpec: Token): bigint;
 /**
  * Returns an abort signal that aborts after a specified timeout in milliseconds
  *

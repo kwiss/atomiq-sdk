@@ -7,7 +7,6 @@ import {
     StorageObject,
     IStorageManager
 } from "@atomiqlabs/base";
-import * as BN from "bn.js";
 import {
     BitcoinTokens,
     BtcToken,
@@ -66,7 +65,7 @@ export type MultichainSwapperOptions<T extends readonly ChainInitializer<any, an
     chains: GetAllOptions<T>
 } & {
     storageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>,
-    pricingFeeDifferencePPM?: BN,
+    pricingFeeDifferencePPM?: bigint,
     mempoolApi?: MempoolApi
 };
 
@@ -162,7 +161,7 @@ export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]
         return new Swapper<ToMultichain<T>>(
             bitcoinRpc,
             chains as any,
-            RedundantSwapPrice.createFromTokenMap<ToMultichain<T>>(options.pricingFeeDifferencePPM ?? new BN(10000), pricingAssets),
+            RedundantSwapPrice.createFromTokenMap<ToMultichain<T>>(options.pricingFeeDifferencePPM ?? 10000n, pricingAssets),
             pricingAssets,
             options
         );
