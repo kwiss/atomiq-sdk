@@ -4,6 +4,7 @@ exports.SwapperFactory = void 0;
 const base_1 = require("@atomiqlabs/base");
 const sdk_lib_1 = require("@atomiqlabs/sdk-lib");
 const SmartChainAssets_1 = require("./SmartChainAssets");
+const LocalStorageManager_1 = require("./storage/LocalStorageManager");
 class SwapperFactory {
     constructor(initializers) {
         this.initializers = initializers;
@@ -70,11 +71,12 @@ class SwapperFactory {
                 name: assetData.name
             });
         });
+        options.chainStorageCtor ?? (options.chainStorageCtor = (name) => new LocalStorageManager_1.LocalStorageManager(name));
         const chains = {};
         for (let { initializer, chainId } of this.initializers) {
             if (options.chains[chainId] == null)
                 continue;
-            chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.storageCtor);
+            chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.chainStorageCtor);
         }
         return new sdk_lib_1.Swapper(bitcoinRpc, chains, sdk_lib_1.RedundantSwapPrice.createFromTokenMap(options.pricingFeeDifferencePPM ?? 10000n, pricingAssets), pricingAssets, options);
     }

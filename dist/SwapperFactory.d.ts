@@ -30,7 +30,7 @@ type ToMultichain<T extends readonly ChainInitializer<any, any, any>[]> = (T ext
 export type MultichainSwapperOptions<T extends readonly ChainInitializer<any, any, any>[]> = SwapperOptions & {
     chains: GetAllOptions<T>;
 } & {
-    storageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>;
+    chainStorageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>;
     pricingFeeDifferencePPM?: bigint;
     mempoolApi?: MempoolApi;
 };

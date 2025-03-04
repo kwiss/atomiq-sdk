@@ -16,6 +16,7 @@ import {
     SwapperOptions
 } from "@atomiqlabs/sdk-lib";
 import {SmartChainAssets} from "./SmartChainAssets";
+import {LocalStorageManager} from "./storage/LocalStorageManager";
 
 type ChainInitializer<O, C extends ChainType, T extends BaseTokenType> = {
     chainId: ChainType["ChainId"],
@@ -63,7 +64,7 @@ type ToMultichain<T extends readonly ChainInitializer<any, any, any>[]> =
 export type MultichainSwapperOptions<T extends readonly ChainInitializer<any, any, any>[]> = SwapperOptions & {
     chains: GetAllOptions<T>
 } & {
-    storageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>,
+    chainStorageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>,
     pricingFeeDifferencePPM?: bigint,
     mempoolApi?: MempoolApi
 };
@@ -150,10 +151,12 @@ export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]
             })
         });
 
+        options.chainStorageCtor ??= (name: string) => new LocalStorageManager(name);
+
         const chains: {[key in T[number]["chainId"]]: ChainData<any>} = {} as any;
         for(let {initializer, chainId} of this.initializers) {
             if(options.chains[chainId]==null) continue;
-            chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.storageCtor) as any;
+            chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.chainStorageCtor) as any;
         }
 
         return new Swapper<ToMultichain<T>>(
