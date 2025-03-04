@@ -37,7 +37,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var __1 = require("../");
-var BN = require("bn.js");
 var fs_storage_1 = require("@atomiqlabs/sdk-lib/dist/fs-storage");
 var chain_starknet_1 = require("@atomiqlabs/chain-starknet");
 var chain_solana_1 = require("@atomiqlabs/chain-solana");
@@ -141,7 +140,7 @@ function createFromBtcSwap() {
                     fromToken = Tokens.BITCOIN.BTC;
                     toToken = Tokens.SOLANA.SOL;
                     exactIn = true;
-                    amount = new BN(10000);
+                    amount = BigInt(10000);
                     return [4 /*yield*/, solanaSwapper.create(fromToken, toToken, amount, exactIn)];
                 case 2:
                     swap = _a.sent();

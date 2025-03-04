@@ -18,3 +18,4 @@ __exportStar(require("@atomiqlabs/base"), exports);
 __exportStar(require("@atomiqlabs/sdk-lib"), exports);
 __exportStar(require("./SwapperFactory"), exports);
 __exportStar(require("./Utils"), exports);
+__exportStar(require("./storage/LocalStorageManager"), exports);

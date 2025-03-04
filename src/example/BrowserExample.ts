@@ -1,5 +1,4 @@
 import {fromHumanReadableString, SwapperFactory, timeoutSignal} from "../";
-import * as BN from "bn.js";
 import {StarknetInitializer, StarknetInitializerType} from "@atomiqlabs/chain-starknet";
 import {SolanaInitializer, SolanaInitializerType} from "@atomiqlabs/chain-solana";
 
@@ -85,7 +84,7 @@ async function createFromBtcSwap() {
     const fromToken = Tokens.BITCOIN.BTC;
     const toToken = Tokens.SOLANA.SOL;
     const exactIn = true; //exactIn = true, so we specify the input amount
-    const amount = new BN(10000); //Amount in BTC base units - sats
+    const amount = BigInt(10000); //Amount in BTC base units - sats
 
     const swap = await solanaSwapper.create(
         fromToken,

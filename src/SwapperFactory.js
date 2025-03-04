@@ -13,9 +13,9 @@ var __assign = (this && this.__assign) || function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SwapperFactory = void 0;
 var base_1 = require("@atomiqlabs/base");
-var BN = require("bn.js");
 var sdk_lib_1 = require("@atomiqlabs/sdk-lib");
 var SmartChainAssets_1 = require("./SmartChainAssets");
+var LocalStorageManager_1 = require("./storage/LocalStorageManager");
 var SwapperFactory = /** @class */ (function () {
     function SwapperFactory(initializers) {
         var _this = this;
@@ -49,15 +49,14 @@ var SwapperFactory = /** @class */ (function () {
         var _this = this;
         var _a, _b, _c, _d, _e, _f, _g;
         (_a = options.bitcoinNetwork) !== null && _a !== void 0 ? _a : (options.bitcoinNetwork = base_1.BitcoinNetwork.MAINNET);
-        (_b = options.storagePrefix) !== null && _b !== void 0 ? _b : (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork);
-        (_c = options.storageCtor) !== null && _c !== void 0 ? _c : (options.storageCtor = function (name) { return new sdk_lib_1.IndexedDBStorageManager(name); });
-        (_d = options.defaultTrustedIntermediaryUrl) !== null && _d !== void 0 ? _d : (options.defaultTrustedIntermediaryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
+        (_b = options.storagePrefix) !== null && _b !== void 0 ? _b : (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork + "-");
+        (_c = options.defaultTrustedIntermediaryUrl) !== null && _c !== void 0 ? _c : (options.defaultTrustedIntermediaryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
             "https://node3.gethopa.com:34100" :
             "https://node3.gethopa.com:24100");
-        (_e = options.registryUrl) !== null && _e !== void 0 ? _e : (options.registryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
+        (_d = options.registryUrl) !== null && _d !== void 0 ? _d : (options.registryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
             "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-mainnet.json?ref=main" :
             "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry.json?ref=main");
-        var mempoolApi = (_f = options.mempoolApi) !== null && _f !== void 0 ? _f : new sdk_lib_1.MempoolApi(options.bitcoinNetwork === base_1.BitcoinNetwork.TESTNET ?
+        var mempoolApi = (_e = options.mempoolApi) !== null && _e !== void 0 ? _e : new sdk_lib_1.MempoolApi(options.bitcoinNetwork === base_1.BitcoinNetwork.TESTNET ?
             [
                 "https://mempool.space/testnet/api/",
                 "https://mempool.fra.mempool.space/testnet/api/",
@@ -82,14 +81,15 @@ var SwapperFactory = /** @class */ (function () {
             var assetData = SmartChainAssets_1.SmartChainAssets[ticker];
             pricingAssets.push(__assign(__assign({}, assetData.pricing), { chains: chains, ticker: ticker, name: assetData.name }));
         });
+        (_f = options.chainStorageCtor) !== null && _f !== void 0 ? _f : (options.chainStorageCtor = function (name) { return new LocalStorageManager_1.LocalStorageManager(name); });
         var chains = {};
         for (var _i = 0, _h = this.initializers; _i < _h.length; _i++) {
             var _j = _h[_i], initializer = _j.initializer, chainId = _j.chainId;
             if (options.chains[chainId] == null)
                 continue;
-            chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.storageCtor);
+            chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.chainStorageCtor);
         }
-        return new sdk_lib_1.Swapper(bitcoinRpc, chains, sdk_lib_1.RedundantSwapPrice.createFromTokenMap((_g = options.pricingFeeDifferencePPM) !== null && _g !== void 0 ? _g : new BN(10000), pricingAssets), pricingAssets, options);
+        return new sdk_lib_1.Swapper(bitcoinRpc, chains, sdk_lib_1.RedundantSwapPrice.createFromTokenMap((_g = options.pricingFeeDifferencePPM) !== null && _g !== void 0 ? _g : 10000n, pricingAssets), pricingAssets, options);
     };
     return SwapperFactory;
 }());
