@@ -10,7 +10,6 @@ import {
 import {
     BitcoinTokens,
     BtcToken,
-    IndexedDBStorageManager,
     MempoolApi,
     MempoolBitcoinRpc, RedundantSwapPrice,
     RedundantSwapPriceAssets, SCToken, Swapper,
@@ -109,8 +108,7 @@ export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]
 
     newSwapper(options: MultichainSwapperOptions<T>) {
         options.bitcoinNetwork ??= BitcoinNetwork.MAINNET as any;
-        options.storagePrefix ??= "atomiqsdk-"+options.bitcoinNetwork;
-        options.storageCtor ??= (name: string) => new IndexedDBStorageManager<any>(name);
+        options.storagePrefix ??= "atomiqsdk-"+options.bitcoinNetwork+"-";
 
         options.defaultTrustedIntermediaryUrl ??= options.bitcoinNetwork===BitcoinNetwork.MAINNET ?
             "https://node3.gethopa.com:34100" :

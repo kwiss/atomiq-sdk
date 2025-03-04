@@ -34,8 +34,7 @@ class SwapperFactory {
     }
     newSwapper(options) {
         options.bitcoinNetwork ?? (options.bitcoinNetwork = base_1.BitcoinNetwork.MAINNET);
-        options.storagePrefix ?? (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork);
-        options.storageCtor ?? (options.storageCtor = (name) => new sdk_lib_1.IndexedDBStorageManager(name));
+        options.storagePrefix ?? (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork + "-");
         options.defaultTrustedIntermediaryUrl ?? (options.defaultTrustedIntermediaryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
             "https://node3.gethopa.com:34100" :
             "https://node3.gethopa.com:24100");
