@@ -4,7 +4,7 @@ A typescript multichain client for atomiqlabs trustlesss cross-chain swaps. Enab
 
 ## Installation
 ```
-npm install github:atomiqlabs/atomiq-sdk#add-starknet
+npm install github:atomiqlabs/atomiq-sdk#refactor-storage
 ```
 
 ## Installing chain-specific connectors
@@ -120,7 +120,7 @@ Initiating & executing the swap.
 
 ```typescript
 const _exactIn = false; //exactIn = false, so we specify the output amount
-const _amount = new BN(10000); //Amount in BTC base units - sats
+const _amount = 10000n; //Amount in BTC base units - sats
 const _address = "bc1qtw67hj77rt8zrkkg3jgngutu0yfgt9czjwusxt"; //BTC address of the recipient
 
 //Create the swap: swapping SOL to Bitcoin on-chain, receiving _amount of satoshis (smallest unit of bitcoin) to _address
@@ -315,7 +315,7 @@ if(!result) {
 #### Swap Bitcoin lightning network -> Smart chain
 ```typescript
 const _exactIn = true; //exactIn = true, so we specify the input amount
-const _amount = new BN(10000); //Amount in BTC base units - sats
+const _amount = 10000n; //Amount in BTC base units - sats
 
 //Create the swap: swapping _amount of satoshis from Bitcoin lightning network to SOL
 const swap = await solanaSwapper.create(
@@ -422,8 +422,8 @@ if(isLNURL) {
     const result: (LNURLPay | LNURLWithdraw | null) = await swapper.getLNURLTypeAndData(_input);
     if(result.type==="pay") {
         const lnurlPayData: LNURLPay = result;
-        const minPayable: BN = lnurlPayData.min; //Minimum payment amount in satoshis
-        const maxPayable: BN = lnurlPayData.max; //Maximum payment amount in satoshis
+        const minPayable: bigint = lnurlPayData.min; //Minimum payment amount in satoshis
+        const maxPayable: bigint = lnurlPayData.max; //Maximum payment amount in satoshis
         const icon: (string | null) = lnurlPayData.icon; //URL encoded icon that should be displayed on the UI
         const shortDescription: (string | null) = lnurlPayData.shortDescription; //Short description of the payment
         const longDescription: (string | null) = lnurlPayData.longDescription; //Long description of the payment
@@ -432,8 +432,8 @@ if(isLNURL) {
     }
     if(result.type==="withdraw") {
         const lnurlWithdrawData: LNURLWithdraw = result;
-        const minWithdrawable: BN = lnurlWithdrawData.min;
-        const maxWithdrawable: BN = lnurlWithdrawData.max;
+        const minWithdrawable: bigint = lnurlWithdrawData.min;
+        const maxWithdrawable: bigint = lnurlWithdrawData.max;
         //Should show a UI allowing the user to choose an amount he wishes to withdraw
     }
 }
@@ -443,7 +443,7 @@ if(isLNURL) {
 ```typescript
 const _lnurlOrIdentifier: string = "lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhkx6rfvdjx2ctvxyesuk0a27"; //Destination LNURL-pay or readable identifier
 const _exactIn = false; //exactIn = false, so we specify the output amount
-const _amount: BN = new BN(10000); //Amount of satoshis to send (1 BTC = 100 000 000 satoshis)
+const _amount: bigint = 10000n; //Amount of satoshis to send (1 BTC = 100 000 000 satoshis)
 
 //Create the swap: swapping SOL to Bitcoin lightning
 const swap = await solanaSwapper.create(
@@ -487,7 +487,7 @@ if(!result) {
 ```typescript
 const _lnurl: string = "lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhkx6rfvdjx2ctvxyesuk0a27"; //Destination LNURL-pay or readable identifier
 const _exactIn = true; //exactIn = true, so we specify the input amount
-const _amount = new BN(10000); //Amount in BTC base units - sats
+const _amount = 10000n; //Amount in BTC base units - sats
 
 //Create the swap: swapping _amount of satoshis from Bitcoin lightning network to SOL
 const swap = await solanaSwapper.create(
