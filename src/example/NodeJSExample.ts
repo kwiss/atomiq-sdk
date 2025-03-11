@@ -2,6 +2,7 @@ import {fromHumanReadableString, SwapperFactory, timeoutSignal} from "../";
 import {FileSystemStorageManager} from "@atomiqlabs/sdk-lib/dist/fs-storage";
 import {StarknetInitializer, StarknetInitializerType} from "@atomiqlabs/chain-starknet";
 import {SolanaInitializer, SolanaInitializerType} from "@atomiqlabs/chain-solana";
+import {IndexedDBUnifiedStorage} from "@atomiqlabs/sdk-lib";
 
 const solanaRpc = "https://api.mainnet-beta.solana.com";
 const starknetRpc = "https://starknet-mainnet.public.blastapi.io/rpc/v0_7";
@@ -26,7 +27,11 @@ async function setupSwapper() {
         },
         //The following line is important for running on backend node.js,
         // because the SDK by default uses browser's Indexed DB, which is not available in node
-        storageCtor: (name: string) => new FileSystemStorageManager(name)
+        swapStorage: (chainId: string) => null,
+        noEvents: true,
+        noTimers: true,
+        dontCheckPastSwaps: true,
+        dontFetchLPs: true
     });
     //Initialize the swapper
     await swapper.init();

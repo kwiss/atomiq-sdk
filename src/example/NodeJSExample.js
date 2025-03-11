@@ -37,7 +37,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var __1 = require("../");
-var fs_storage_1 = require("@atomiqlabs/sdk-lib/dist/fs-storage");
 var chain_starknet_1 = require("@atomiqlabs/chain-starknet");
 var chain_solana_1 = require("@atomiqlabs/chain-solana");
 var solanaRpc = "https://api.mainnet-beta.solana.com";
@@ -65,7 +64,11 @@ function setupSwapper() {
                         },
                         //The following line is important for running on backend node.js,
                         // because the SDK by default uses browser's Indexed DB, which is not available in node
-                        storageCtor: function (name) { return new fs_storage_1.FileSystemStorageManager(name); }
+                        swapStorage: function (chainId) { return null; },
+                        noEvents: true,
+                        noTimers: true,
+                        dontCheckPastSwaps: true,
+                        dontFetchLPs: true
                     });
                     //Initialize the swapper
                     return [4 /*yield*/, swapper.init()];
