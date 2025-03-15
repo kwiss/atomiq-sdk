@@ -84,7 +84,7 @@ const wallet = new SolanaSigner(anchorWallet);
 ```typescript
 //Browser, using get-starknet
 const swo = await connect();
-const wallet = new StarknetSigner(new WalletAccount(starknetRpc, swo));
+const wallet = new StarknetSigner(new WalletAccount(starknetRpc, swo.wallet));
 ```
 
 or
