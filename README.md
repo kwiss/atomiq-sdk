@@ -4,7 +4,7 @@ A typescript multichain client for atomiqlabs trustlesss cross-chain swaps. Enab
 
 ## Installation
 ```
-npm install github:atomiqlabs/atomiq-sdk#refactor-storage
+npm install @atomiqlabs/sdk
 ```
 
 ## Installing chain-specific connectors
@@ -12,8 +12,8 @@ npm install github:atomiqlabs/atomiq-sdk#refactor-storage
 You can install only the chain-specific connectors that your project requires
 
 ```
-npm install github:atomiqlabs/atomiq-chain-solana#add-starknet
-npm install github:atomiqlabs/atomiq-chain-starknet
+npm install @atomiqlabs/chain-solana
+npm install @atomiqlabs/chain-starknet
 ```
 
 ## How to use?
