@@ -1,13 +1,17 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2015",
+    "target": "es2020",
     "declaration": true,
     "outDir": "./dist",
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
   },
   "include": [
     "./src/**/*"
+  ],
+  "exclude": [
+    "./src/example"
   ]
 }

@@ -1,5 +1,7 @@
-
-export const SmartChainAssets = {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SmartChainAssets = void 0;
+exports.SmartChainAssets = {
     WBTC: {
         pricing: {
             binancePair: "WBTCBTC",
@@ -50,7 +52,6 @@ export const SmartChainAssets = {
         },
         name: "Bonk"
     },
-
     ETH: {
         pricing: {
             binancePair: "ETHBTC",
@@ -71,6 +72,4 @@ export const SmartChainAssets = {
         },
         name: "Starknet"
     }
-} as const;
-
-export type SmartChainAssetTickers = keyof typeof SmartChainAssets;
+};

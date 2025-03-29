@@ -1,42 +1,66 @@
-import {SolanaKeypairWallet, SolanaSigner, SolanaSwapperWithSigner, MultichainSwapper, Tokens} from "../";
-import {Keypair} from "@solana/web3.js";
-import * as BN from "bn.js";
+import {fromHumanReadableString, SwapperFactory, timeoutSignal} from "../";
 import {FileSystemStorageManager} from "@atomiqlabs/sdk-lib/dist/fs-storage";
+import {StarknetInitializer, StarknetInitializerType} from "@atomiqlabs/chain-starknet";
+import {SolanaInitializer, SolanaInitializerType} from "@atomiqlabs/chain-solana";
+import {IndexedDBUnifiedStorage} from "@atomiqlabs/sdk-lib";
 
 const solanaRpc = "https://api.mainnet-beta.solana.com";
+const starknetRpc = "https://starknet-mainnet.public.blastapi.io/rpc/v0_7";
 
-let solanaSwapper: SolanaSwapperWithSigner;
+//We initialize a swapper factory, this is important such that we can pick and choose which chains
+// we want to support and only install those specific libraries, here Solana & Starknet are used
+//NOTE: The "as const" keyword is important here as to let typescript properly infer the
+// generic type of the SwapperFactory, allowing you to have code-completion for Tokens and TokenResolver
+const Factory = new SwapperFactory<[SolanaInitializerType, StarknetInitializerType]>([SolanaInitializer, StarknetInitializer] as const);
+const Tokens = Factory.Tokens;
 
 async function setupSwapper() {
     //Setup the multichain swapper
-    const swapper: MultichainSwapper = new MultichainSwapper({
+    const swapper = Factory.newSwapper({
         chains: {
             SOLANA: {
                 rpcUrl: solanaRpc
+            },
+            STARKNET: {
+                rpcUrl: starknetRpc
             }
         },
         //The following line is important for running on backend node.js,
-        // because the SDK by default uses browser's Indexed DB
-        storageCtor: (name: string) => new FileSystemStorageManager(name)
+        // because the SDK by default uses browser's Indexed DB, which is not available in node
+        swapStorage: (chainId: string) => null,
+        noEvents: true,
+        noTimers: true,
+        dontCheckPastSwaps: true,
+        dontFetchLPs: true
     });
+    //Initialize the swapper
     await swapper.init();
 
-    //Create new random keypair wallet
-    const wallet = new SolanaKeypairWallet(Keypair.generate()); //This is just a dummy, you should load the wallet from file, or etc.
+    //Extract a Solana specific swapper (used for swapping between Solana and Bitcoin)
+    const solanaSwapper = swapper.withChain<"SOLANA">("SOLANA");
 
-    const signer: SolanaSigner = new SolanaSigner(wallet);
-    //Extract a Solana specific swapper (used for swapping between Solana and Bitcoin) with a defined signer
-    solanaSwapper = swapper.withChain("SOLANA").withSigner(signer);
+    //Create new random keypair wallet
+    const signer = solanaSwapper.randomSigner(); //This is just a dummy, you should load the wallet from file, or etc.
+    //Or in React, using solana wallet adapter
+    //const signer = new SolanaKeypairWallet(useAnchorWallet());
+
+    //Extract a swapper with a defined signer
+    return solanaSwapper.withSigner(signer);
 }
 
 async function createToBtcSwap() {
+    //In real use-cases you would setup the swapper just once, not for every swap!
+    const solanaSwapper = await setupSwapper();
+
+    const fromToken = Tokens.SOLANA.SOL;
+    const toToken = Tokens.BITCOIN.BTC;
     const exactIn = false; //exactIn = false, so we specify the output amount
-    const amount = new BN(10000); //Amount in BTC base units - sats
+    const amount = fromHumanReadableString("0.0001", toToken); //Amount in BTC base units - sats, you can also use fromHumanReadable helper methods
     const recipientBtcAddress = "bc1qtw67hj77rt8zrkkg3jgngutu0yfgt9czjwusxt"; //BTC address of the recipient
 
     const swap = await solanaSwapper.create(
-        Tokens.SOLANA.SOL,
-        Tokens.BITCOIN.BTC,
+        fromToken,
+        toToken,
         amount,
         exactIn,
         recipientBtcAddress
@@ -64,10 +88,12 @@ async function createToBtcSwap() {
 }
 
 async function createFromBtcSwap() {
+    const solanaSwapper = await setupSwapper();
+
     const fromToken = Tokens.BITCOIN.BTC;
     const toToken = Tokens.SOLANA.SOL;
     const exactIn = true; //exactIn = true, so we specify the input amount
-    const amount = new BN(10000); //Amount in BTC base units - sats
+    const amount = BigInt(10000); //Amount in BTC base units - sats
 
     const swap = await solanaSwapper.create(
         fromToken,
@@ -107,12 +133,16 @@ async function createFromBtcSwap() {
         }
     ); //This returns as soon as the transaction is accepted
 
-    //Swap will get automatically claimed by the watchtowers
-    await swap.waitTillClaimed();
+    //Swap should get automatically claimed by the watchtowers, if not we can call swap.claim()
+    try {
+        await swap.waitTillClaimed(timeoutSignal(30*1000));
+    } catch (e) {
+        //Claim ourselves when automatic claim doesn't happen in 30 seconds
+        await swap.claim();
+    }
 }
 
 async function main() {
-    await setupSwapper();
     // await createToBtcSwap();
     // await createFromBtcSwap();
 }
