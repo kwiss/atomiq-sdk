@@ -2,7 +2,7 @@ export declare const SmartChainAssets: {
     readonly WBTC: {
         readonly pricing: {
             readonly binancePair: "WBTCBTC";
-            readonly okxPair: any;
+            readonly okxPair: "WBTC-BTC";
             readonly coinGeckoCoinId: "wrapped-bitcoin";
             readonly coinPaprikaCoinId: "wbtc-wrapped-bitcoin";
             readonly krakenPair: "WBTCXBT";
