@@ -8,7 +8,7 @@ export const SmartChainAssets = {
             coinPaprikaCoinId: "wbtc-wrapped-bitcoin",
             krakenPair: "WBTCXBT"
         },
-        name: "Wrapped BTC (Wormhole)"
+        name: "Wrapped BTC (WBTC)"
     },
     USDC: {
         pricing: {

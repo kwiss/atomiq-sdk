@@ -7,7 +7,7 @@ export declare const SmartChainAssets: {
             readonly coinPaprikaCoinId: "wbtc-wrapped-bitcoin";
             readonly krakenPair: "WBTCXBT";
         };
-        readonly name: "Wrapped BTC (Wormhole)";
+        readonly name: "Wrapped BTC (WBTC)";
     };
     readonly USDC: {
         readonly pricing: {
