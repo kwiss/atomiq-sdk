@@ -78,7 +78,15 @@ class SwapperFactory {
                 continue;
             chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.chainStorageCtor);
         }
-        return new sdk_lib_1.Swapper(bitcoinRpc, chains, sdk_lib_1.RedundantSwapPrice.createFromTokenMap(options.pricingFeeDifferencePPM ?? 10000n, pricingAssets), pricingAssets, options);
+        const swapPricing = options.getPriceFn != null ?
+            new sdk_lib_1.SingleSwapPrice(options.pricingFeeDifferencePPM ?? 10000n, new sdk_lib_1.CustomPriceProvider(pricingAssets.map(val => {
+                return {
+                    coinId: val.ticker,
+                    chains: val.chains
+                };
+            }), options.getPriceFn)) :
+            sdk_lib_1.RedundantSwapPrice.createFromTokenMap(options.pricingFeeDifferencePPM ?? 10000n, pricingAssets);
+        return new sdk_lib_1.Swapper(bitcoinRpc, chains, swapPricing, pricingAssets, options);
     }
 }
 exports.SwapperFactory = SwapperFactory;

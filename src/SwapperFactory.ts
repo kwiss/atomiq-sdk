@@ -9,10 +9,10 @@ import {
 } from "@atomiqlabs/base";
 import {
     BitcoinTokens,
-    BtcToken,
+    BtcToken, CustomPriceFunction, CustomPriceProvider,
     MempoolApi,
     MempoolBitcoinRpc, RedundantSwapPrice,
-    RedundantSwapPriceAssets, SCToken, Swapper,
+    RedundantSwapPriceAssets, SCToken, SingleSwapPrice, Swapper,
     SwapperOptions
 } from "@atomiqlabs/sdk-lib";
 import {SmartChainAssets} from "./SmartChainAssets";
@@ -66,7 +66,8 @@ export type MultichainSwapperOptions<T extends readonly ChainInitializer<any, an
 } & {
     chainStorageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>,
     pricingFeeDifferencePPM?: bigint,
-    mempoolApi?: MempoolApi
+    mempoolApi?: MempoolApi,
+    getPriceFn?: CustomPriceFunction
 };
 
 export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]> {
@@ -159,10 +160,19 @@ export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]
             chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.chainStorageCtor) as any;
         }
 
+        const swapPricing = options.getPriceFn!=null ?
+            new SingleSwapPrice(options.pricingFeeDifferencePPM ?? 10000n, new CustomPriceProvider(pricingAssets.map(val => {
+                return {
+                    coinId: val.ticker,
+                    chains: val.chains
+                }
+            }), options.getPriceFn)) :
+            RedundantSwapPrice.createFromTokenMap<ToMultichain<T>>(options.pricingFeeDifferencePPM ?? 10000n, pricingAssets);
+
         return new Swapper<ToMultichain<T>>(
             bitcoinRpc,
             chains as any,
-            RedundantSwapPrice.createFromTokenMap<ToMultichain<T>>(options.pricingFeeDifferencePPM ?? 10000n, pricingAssets),
+            swapPricing,
             pricingAssets,
             options
         );
