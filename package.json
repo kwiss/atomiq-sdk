@@ -1,6 +1,6 @@
 {
   "name": "@atomiqlabs/sdk",
-  "version": "4.0.0-dev.0",
+  "version": "4.0.0-dev.1",
   "description": "atomiq labs SDK for cross-chain swaps between smart chains and bitcoin",
   "main": "./dist/index.js",
   "types:": "./dist/index.d.ts",
@@ -21,13 +21,8 @@
   "author": "adambor",
   "license": "ISC",
   "dependencies": {
-<<<<<<< HEAD
-    "@atomiqlabs/base": "^8.0.1",
-    "@atomiqlabs/sdk-lib": "^12.0.8"
-=======
     "@atomiqlabs/base": "github:atomiqlabs/atomiq-base#spv-swaps",
     "@atomiqlabs/sdk-lib": "github:atomiqlabs/atomiq-sdk-lib#spv-swaps"
->>>>>>> bca8c2d (Initial version with spv vault swaps)
   },
   "devDependencies": {
     "@types/node": "22.13.5",
