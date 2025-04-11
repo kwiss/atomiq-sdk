@@ -5,12 +5,12 @@ exports.SmartChainAssets = {
     WBTC: {
         pricing: {
             binancePair: "WBTCBTC",
-            okxPair: null,
+            okxPair: "WBTC-BTC",
             coinGeckoCoinId: "wrapped-bitcoin",
             coinPaprikaCoinId: "wbtc-wrapped-bitcoin",
             krakenPair: "WBTCXBT"
         },
-        name: "Wrapped BTC (Wormhole)"
+        name: "Wrapped BTC (WBTC)"
     },
     USDC: {
         pricing: {

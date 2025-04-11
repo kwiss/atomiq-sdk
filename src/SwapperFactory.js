@@ -47,7 +47,7 @@ var SwapperFactory = /** @class */ (function () {
     }
     SwapperFactory.prototype.newSwapper = function (options) {
         var _this = this;
-        var _a, _b, _c, _d, _e, _f, _g;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         (_a = options.bitcoinNetwork) !== null && _a !== void 0 ? _a : (options.bitcoinNetwork = base_1.BitcoinNetwork.MAINNET);
         (_b = options.storagePrefix) !== null && _b !== void 0 ? _b : (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork + "-");
         (_c = options.defaultTrustedIntermediaryUrl) !== null && _c !== void 0 ? _c : (options.defaultTrustedIntermediaryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
@@ -83,13 +83,21 @@ var SwapperFactory = /** @class */ (function () {
         });
         (_f = options.chainStorageCtor) !== null && _f !== void 0 ? _f : (options.chainStorageCtor = function (name) { return new LocalStorageManager_1.LocalStorageManager(name); });
         var chains = {};
-        for (var _i = 0, _h = this.initializers; _i < _h.length; _i++) {
-            var _j = _h[_i], initializer = _j.initializer, chainId = _j.chainId;
+        for (var _i = 0, _j = this.initializers; _i < _j.length; _i++) {
+            var _k = _j[_i], initializer = _k.initializer, chainId = _k.chainId;
             if (options.chains[chainId] == null)
                 continue;
             chains[chainId] = initializer(options.chains[chainId], bitcoinRpc, options.bitcoinNetwork, options.chainStorageCtor);
         }
-        return new sdk_lib_1.Swapper(bitcoinRpc, chains, sdk_lib_1.RedundantSwapPrice.createFromTokenMap((_g = options.pricingFeeDifferencePPM) !== null && _g !== void 0 ? _g : 10000n, pricingAssets), pricingAssets, options);
+        var swapPricing = options.getPriceFn != null ?
+            new sdk_lib_1.SingleSwapPrice((_g = options.pricingFeeDifferencePPM) !== null && _g !== void 0 ? _g : 10000n, new sdk_lib_1.CustomPriceProvider(pricingAssets.map(function (val) {
+                return {
+                    coinId: val.ticker,
+                    chains: val.chains
+                };
+            }), options.getPriceFn)) :
+            sdk_lib_1.RedundantSwapPrice.createFromTokenMap((_h = options.pricingFeeDifferencePPM) !== null && _h !== void 0 ? _h : 10000n, pricingAssets);
+        return new sdk_lib_1.Swapper(bitcoinRpc, chains, swapPricing, pricingAssets, options);
     };
     return SwapperFactory;
 }());
