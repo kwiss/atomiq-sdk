@@ -57,7 +57,7 @@ export declare const SmartChainAssets: {
             readonly coinPaprikaCoinId: "eth-ethereum";
             readonly krakenPair: "XETHXXBT";
         };
-        readonly name: "Ethereum";
+        readonly name: "Ether";
     };
     readonly STRK: {
         readonly pricing: {

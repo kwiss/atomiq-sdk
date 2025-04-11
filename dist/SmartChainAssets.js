@@ -60,7 +60,7 @@ exports.SmartChainAssets = {
             coinPaprikaCoinId: "eth-ethereum",
             krakenPair: "XETHXXBT"
         },
-        name: "Ethereum"
+        name: "Ether"
     },
     STRK: {
         pricing: {
