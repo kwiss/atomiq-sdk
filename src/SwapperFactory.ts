@@ -70,6 +70,38 @@ export type MultichainSwapperOptions<T extends readonly ChainInitializer<any, an
     getPriceFn?: CustomPriceFunction
 };
 
+const registries = {
+    [BitcoinNetwork.MAINNET]: "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-mainnet.json?ref=main",
+    [BitcoinNetwork.TESTNET]: "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry.json?ref=main",
+    [BitcoinNetwork.TESTNET4]: "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-testnet4.json?ref=main"
+}
+
+const trustedIntermediaries = {
+    [BitcoinNetwork.MAINNET]: "https://node3.gethopa.com:34100",
+    [BitcoinNetwork.TESTNET]: "https://node3.gethopa.com:24100"
+}
+
+const mempoolUrls = {
+    [BitcoinNetwork.MAINNET]: [
+        "https://mempool.space/api/",
+        "https://mempool.fra.mempool.space/api/",
+        "https://mempool.va1.mempool.space/api/",
+        "https://mempool.tk7.mempool.space/api/"
+    ],
+    [BitcoinNetwork.TESTNET]: [
+        "https://mempool.space/testnet/api/",
+        "https://mempool.fra.mempool.space/testnet/api/",
+        "https://mempool.va1.mempool.space/testnet/api/",
+        "https://mempool.tk7.mempool.space/testnet/api/"
+    ],
+    [BitcoinNetwork.TESTNET4]: [
+        "https://mempool.space/testnet4/api/",
+        "https://mempool.fra.mempool.space/testnet4/api/",
+        "https://mempool.va1.mempool.space/testnet4/api/",
+        "https://mempool.tk7.mempool.space/testnet4/api/"
+    ]
+}
+
 export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]> {
 
     Tokens: GetAllTokens<T> & {
@@ -112,29 +144,11 @@ export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]
         options.bitcoinNetwork ??= BitcoinNetwork.MAINNET as any;
         options.storagePrefix ??= "atomiqsdk-"+options.bitcoinNetwork+"-";
 
-        options.defaultTrustedIntermediaryUrl ??= options.bitcoinNetwork===BitcoinNetwork.MAINNET ?
-            "https://node3.gethopa.com:34100" :
-            "https://node3.gethopa.com:24100";
+        options.defaultTrustedIntermediaryUrl ??= trustedIntermediaries[options.bitcoinNetwork];
 
-        options.registryUrl ??= options.bitcoinNetwork===BitcoinNetwork.MAINNET ?
-            "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-mainnet.json?ref=main" :
-            "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry.json?ref=main";
+        options.registryUrl ??= registries[options.bitcoinNetwork];
 
-        const mempoolApi = options.mempoolApi ?? new MempoolApi(
-            options.bitcoinNetwork===BitcoinNetwork.TESTNET ?
-                [
-                    "https://mempool.space/testnet/api/",
-                    "https://mempool.fra.mempool.space/testnet/api/",
-                    "https://mempool.va1.mempool.space/testnet/api/",
-                    "https://mempool.tk7.mempool.space/testnet/api/"
-                ] :
-                [
-                    "https://mempool.space/api/",
-                    "https://mempool.fra.mempool.space/api/",
-                    "https://mempool.va1.mempool.space/api/",
-                    "https://mempool.tk7.mempool.space/api/"
-                ]
-        );
+        const mempoolApi = options.mempoolApi ?? new MempoolApi(mempoolUrls[options.bitcoinNetwork]);
         const bitcoinRpc = new MempoolBitcoinRpc(mempoolApi);
 
         const pricingAssets: (RedundantSwapPriceAssets<ToMultichain<T>>[number] & {ticker: string, name: string})[] = [];
