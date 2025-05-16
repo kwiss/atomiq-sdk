@@ -67,8 +67,8 @@ class SwapperFactory {
         options.storagePrefix ?? (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork + "-");
         options.defaultTrustedIntermediaryUrl ?? (options.defaultTrustedIntermediaryUrl = trustedIntermediaries[options.bitcoinNetwork]);
         options.registryUrl ?? (options.registryUrl = registries[options.bitcoinNetwork]);
-        const mempoolApi = options.mempoolApi ?? new sdk_lib_1.MempoolApi(mempoolUrls[options.bitcoinNetwork]);
-        const bitcoinRpc = new sdk_lib_1.MempoolBitcoinRpc(mempoolApi);
+        const mempoolApi = options.mempoolApi ?? new sdk_lib_1.MempoolBitcoinRpc(mempoolUrls[options.bitcoinNetwork]);
+        const bitcoinRpc = mempoolApi instanceof sdk_lib_1.MempoolBitcoinRpc ? mempoolApi : new sdk_lib_1.MempoolBitcoinRpc(mempoolApi);
         const pricingAssets = [];
         Object.keys(SmartChainAssets_1.SmartChainAssets).forEach((ticker) => {
             const chains = {};

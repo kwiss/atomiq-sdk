@@ -66,7 +66,7 @@ export type MultichainSwapperOptions<T extends readonly ChainInitializer<any, an
 } & {
     chainStorageCtor?: <T extends StorageObject>(name: string) => IStorageManager<T>,
     pricingFeeDifferencePPM?: bigint,
-    mempoolApi?: MempoolApi,
+    mempoolApi?: MempoolApi | MempoolBitcoinRpc | string | string[],
     getPriceFn?: CustomPriceFunction
 };
 
@@ -148,8 +148,8 @@ export class SwapperFactory<T extends readonly ChainInitializer<any, any, any>[]
 
         options.registryUrl ??= registries[options.bitcoinNetwork];
 
-        const mempoolApi = options.mempoolApi ?? new MempoolApi(mempoolUrls[options.bitcoinNetwork]);
-        const bitcoinRpc = new MempoolBitcoinRpc(mempoolApi);
+        const mempoolApi = options.mempoolApi ?? new MempoolBitcoinRpc(mempoolUrls[options.bitcoinNetwork]);
+        const bitcoinRpc = mempoolApi instanceof MempoolBitcoinRpc ? mempoolApi : new MempoolBitcoinRpc(mempoolApi);
 
         const pricingAssets: (RedundantSwapPriceAssets<ToMultichain<T>>[number] & {ticker: string, name: string})[] = [];
         Object.keys(SmartChainAssets).forEach((ticker) => {

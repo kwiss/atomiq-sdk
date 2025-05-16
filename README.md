@@ -48,7 +48,7 @@ const swapper = Factory.newSwapper({
             rpcUrl: starknetRpc //You can also pass Provider object here
         }
     },
-    bitcoinNetwork: BitcoinNetwork.TESTNET //or BitcoinNetwork.MAINNET - this also sets the network to use for Solana (solana devnet for bitcoin testnet) & Starknet (sepolia for bitcoin testnet)
+    bitcoinNetwork: BitcoinNetwork.TESTNET //or BitcoinNetwork.MAINNET, BitcoinNetwork.TESTNET4 - this also sets the network to use for Solana (solana devnet for bitcoin testnet) & Starknet (sepolia for bitcoin testnet)
 });
 ```
 

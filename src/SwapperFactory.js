@@ -10,12 +10,42 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SwapperFactory = void 0;
 var base_1 = require("@atomiqlabs/base");
 var sdk_lib_1 = require("@atomiqlabs/sdk-lib");
 var SmartChainAssets_1 = require("./SmartChainAssets");
 var LocalStorageManager_1 = require("./storage/LocalStorageManager");
+var registries = (_a = {},
+    _a[base_1.BitcoinNetwork.MAINNET] = "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-mainnet.json?ref=main",
+    _a[base_1.BitcoinNetwork.TESTNET] = "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry.json?ref=main",
+    _a[base_1.BitcoinNetwork.TESTNET4] = "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-testnet4.json?ref=main",
+    _a);
+var trustedIntermediaries = (_b = {},
+    _b[base_1.BitcoinNetwork.MAINNET] = "https://node3.gethopa.com:34100",
+    _b[base_1.BitcoinNetwork.TESTNET] = "https://node3.gethopa.com:24100",
+    _b);
+var mempoolUrls = (_c = {},
+    _c[base_1.BitcoinNetwork.MAINNET] = [
+        "https://mempool.space/api/",
+        "https://mempool.fra.mempool.space/api/",
+        "https://mempool.va1.mempool.space/api/",
+        "https://mempool.tk7.mempool.space/api/"
+    ],
+    _c[base_1.BitcoinNetwork.TESTNET] = [
+        "https://mempool.space/testnet/api/",
+        "https://mempool.fra.mempool.space/testnet/api/",
+        "https://mempool.va1.mempool.space/testnet/api/",
+        "https://mempool.tk7.mempool.space/testnet/api/"
+    ],
+    _c[base_1.BitcoinNetwork.TESTNET4] = [
+        "https://mempool.space/testnet4/api/",
+        "https://mempool.fra.mempool.space/testnet4/api/",
+        "https://mempool.va1.mempool.space/testnet4/api/",
+        "https://mempool.tk7.mempool.space/testnet4/api/"
+    ],
+    _c);
 var SwapperFactory = /** @class */ (function () {
     function SwapperFactory(initializers) {
         var _this = this;
@@ -50,25 +80,11 @@ var SwapperFactory = /** @class */ (function () {
         var _a, _b, _c, _d, _e, _f, _g, _h;
         (_a = options.bitcoinNetwork) !== null && _a !== void 0 ? _a : (options.bitcoinNetwork = base_1.BitcoinNetwork.MAINNET);
         (_b = options.storagePrefix) !== null && _b !== void 0 ? _b : (options.storagePrefix = "atomiqsdk-" + options.bitcoinNetwork + "-");
-        (_c = options.defaultTrustedIntermediaryUrl) !== null && _c !== void 0 ? _c : (options.defaultTrustedIntermediaryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
-            "https://node3.gethopa.com:34100" :
-            "https://node3.gethopa.com:24100");
-        (_d = options.registryUrl) !== null && _d !== void 0 ? _d : (options.registryUrl = options.bitcoinNetwork === base_1.BitcoinNetwork.MAINNET ?
-            "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry-mainnet.json?ref=main" :
-            "https://api.github.com/repos/adambor/SolLightning-registry/contents/registry.json?ref=main");
-        var mempoolApi = (_e = options.mempoolApi) !== null && _e !== void 0 ? _e : new sdk_lib_1.MempoolApi(options.bitcoinNetwork === base_1.BitcoinNetwork.TESTNET ?
-            [
-                "https://mempool.space/testnet/api/",
-                "https://mempool.fra.mempool.space/testnet/api/",
-                "https://mempool.va1.mempool.space/testnet/api/",
-                "https://mempool.tk7.mempool.space/testnet/api/"
-            ] :
-            [
-                "https://mempool.space/api/",
-                "https://mempool.fra.mempool.space/api/",
-                "https://mempool.va1.mempool.space/api/",
-                "https://mempool.tk7.mempool.space/api/"
-            ]);
+        (_c = options.defaultTrustedIntermediaryUrl) !== null && _c !== void 0 ? _c : (options.defaultTrustedIntermediaryUrl = trustedIntermediaries[options.bitcoinNetwork]);
+        (_d = options.registryUrl) !== null && _d !== void 0 ? _d : (options.registryUrl = registries[options.bitcoinNetwork]);
+        var b;
+        if (options.mempoolApi instanceof sdk_lib_1.MempoolApi)
+            var mempoolApi = (_e = options.mempoolApi) !== null && _e !== void 0 ? _e : new sdk_lib_1.MempoolApi(mempoolUrls[options.bitcoinNetwork]);
         var bitcoinRpc = new sdk_lib_1.MempoolBitcoinRpc(mempoolApi);
         var pricingAssets = [];
         Object.keys(SmartChainAssets_1.SmartChainAssets).forEach(function (ticker) {
