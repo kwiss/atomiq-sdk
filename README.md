@@ -30,6 +30,10 @@ const starknetRpc = "https://starknet-mainnet.public.blastapi.io/rpc/v0_7";
 Create swapper factory, here we can pick and choose which chains we want to have supported in the SDK, ensure the "as const" keyword is used such that the typescript compiler can properly infer the types.
 
 ```typescript
+import {SolanaInitializer, SolanaInitializerType} from "@atomiqlabs/chain-solana";
+import {StarknetInitializer, StarknetInitializerType} from "@atomiqlabs/chain-starknet";
+import {SwapperFactory} from "@atomiqlabs/sdk";
+
 const Factory = new SwapperFactory<[SolanaInitializerType, StarknetInitializerType]>([SolanaInitializer, StarknetInitializer] as const);
 const Tokens = Factory.Tokens; //Get the supported tokens for all the specified chains.
 ```
@@ -39,6 +43,8 @@ const Tokens = Factory.Tokens; //Get the supported tokens for all the specified 
 This uses browser's Indexed DB by default
 
 ```typescript
+import {BitcoinNetwork} from "@atomiqlabs/sdk";
+
 const swapper = Factory.newSwapper({
     chains: {
         SOLANA: {
@@ -54,9 +60,18 @@ const swapper = Factory.newSwapper({
 
 #### NodeJS
 
-For NodeJS we need to explicitly use filesystem storage
+For NodeJS we need to use sqlite storage, for that we first need to install the sqlite storage adaptor
+
+```
+npm install @atomiqlabs/storage-sqlite
+```
+
+Then use pass it in the newSwapper function
 
 ```typescript
+import {SqliteStorageManager, SqliteUnifiedStorage} from "@atomiqlabs/storage-sqlite";
+import {BitcoinNetwork} from "@atomiqlabs/sdk";
+
 const swapper = Factory.newSwapper({
     chains: {
         SOLANA: {
@@ -67,21 +82,25 @@ const swapper = Factory.newSwapper({
         }
     },
     bitcoinNetwork: BitcoinNetwork.TESTNET, //or BitcoinNetwork.MAINNET - this also sets the network to use for Solana (solana devnet for bitcoin testnet) & Starknet (sepolia for bitcoin testnet)
-    //The following line is important for running on backend node.js,
+    //The following lines are important for running on backend node.js,
     // because the SDK by default uses browser's Indexed DB
-    storageCtor: (name: string) => new FileSystemStorageManager(name)
+    swapStorage: chainId => new SqliteUnifiedStorage("CHAIN_"+chainId+".sqlite3"),
+    chainStorageCtor: name => new SqliteStorageManager("STORE_"+name+".sqlite3"),
 });
 ```
 
 ### Signer
 
 ```typescript
-//React, using solana wallet adapter
+import {SolanaSigner} from "@atomiqlabs/chain-solana";
+//Browser - react, using solana wallet adapter
 const anchorWallet = useAnchorWallet();
 const wallet = new SolanaSigner(anchorWallet);
 ```
 
 ```typescript
+import {WalletAccount} from "starknet";
+import {StarknetSigner} from "@atomiqlabs/chain-starknet";
 //Browser, using get-starknet
 const swo = await connect();
 const wallet = new StarknetSigner(new WalletAccount(starknetRpc, swo.wallet));
@@ -90,8 +109,16 @@ const wallet = new StarknetSigner(new WalletAccount(starknetRpc, swo.wallet));
 or
 
 ```typescript
-//Creating a random signer
-const wallet = swapper.randomSigner<"SOLANA">("SOLANA");
+import {Keypair} from "@solana/web3.js";
+import {SolanaKeypairWallet, SolanaSigner} from "@atomiqlabs/chain-solana";
+//Creating Solana signer from private key
+const solanaSigner = new SolanaSigner(new SolanaKeypairWallet(Keypair.fromSecretKey(solanaKey)), Keypair.fromSecretKey(solanaKey));
+```
+
+```typescript
+import {SolanaKeypairWallet, SolanaSigner} from "@atomiqlabs/chain-solana";
+//Creating Starknet signer from private key
+const starknetSigner = new StarknetSigner(new StarknetKeypairWallet(starknetRpc, starknetKey));
 ```
 
 ### Initialization
@@ -106,42 +133,67 @@ Now we have the multichain swapper initialized
 
 ### Extract chain-specific swapper with signer
 
-To make it easier to do swaps between bitcoin and a specific chain we can extract a chain-specific swapper, and also set a signer.
+To make it easier to do swaps between bitcoin and a specific chain we can extract a chain-specific swapper, and also set a signer. e.g.:
 
 ```typescript
-const solanaSwapper = swapper.withChain<"SOLANA">("SOLANA").withSigner(signer);
+const solanaSwapper = swapper.withChain<"SOLANA">("SOLANA");
+```
+
+or also with signer
+
+```typescript
+const starknetSwapperWithSigner = swapper.withChain<"STARKNET">("STARKNET").withSigner(signer);
 ```
 
 ### Bitcoin on-chain swaps
 
 #### Swap Smart chain -> Bitcoin on-chain
 
-Initiating & executing the swap.
+Getting swap quote
 
 ```typescript
 const _exactIn = false; //exactIn = false, so we specify the output amount
-const _amount = 10000n; //Amount in BTC base units - sats
+const _amount = 10000n; //Amount in BTC base units - sats (10000 sats = 0.0001 BTC)
 const _address = "bc1qtw67hj77rt8zrkkg3jgngutu0yfgt9czjwusxt"; //BTC address of the recipient
 
 //Create the swap: swapping SOL to Bitcoin on-chain, receiving _amount of satoshis (smallest unit of bitcoin) to _address
-const swap = await solanaSwapper.create(
-    Tokens.SOLANA.SOL,
-    Tokens.BITCOIN.BTC,
+const swap = await swapper.swap(
+    Tokens.SOLANA.SOL, //From specified source token
+    Tokens.BITCOIN.BTC, //Swap to BTC
     _amount,
     _exactIn,
-    _address
+    solanaSigner.getAddress(), //Source address and smart chain signer
+    _address //Destination of the swap
 );
 
 //Get the amount required to pay and fee
-const amountToBePaid: string = swap.getInput().amount; //Human readable amount to be paid on the Solana side (including fee)
-const fee: string = swap.getFee().amountInSrcToken.amount; //Human readable swap fee paid on the Solana side (already included in the the above amount)
+const input: string = swap.getInputWithoutFee().toString(); //Input amount excluding fees
+const fee: string = swap.getFee().amountInSrcToken.toString(); //Fees paid on the output
+const inputWithFees: string = swap.getInput().toString(); //Total amount paid including fees
+
+const output: string = swap.getOutput().toString(); //Total output amount
 
 //Get swap expiration time
-const expiry: number = swap.getExpiry(); //Expiration time of the swap in UNIX milliseconds, swap needs to be initiated before this time
+const expiry: number = swap.getQuoteExpiry(); //Expiration time of the swap quote in UNIX milliseconds, swap needs to be initiated before this time
 
+//Get pricing info
+const swapPrice = swap.getPriceInfo().swapPrice; //Price of the current swap (excluding fees)
+const marketPrice = swap.getPriceInfo().marketPrice; //Current market price
+const difference = swap.getPriceInfo().difference; //Difference between the swap price & current market price
+```
+
+Initiating the swap
+
+```typescript
 //Initiate and pay for the swap
-await swap.commit();
+await swap.commit(solanaSigner);
+```
 
+or [sign and send transaction manually](#manually-signing-smart-chain-transactions)
+
+Wait for the swap to execute, refund in case of failure
+
+```typescript
 //Wait for the swap to conclude
 const result: boolean = await swap.waitForPayment();
 if(!result) {
@@ -172,48 +224,83 @@ if(!result) {
 - ToBTCSwapState.REFUNDABLE = 4
   - Swap was initiated but counterparty failed to process it, the user can now refund his funds
 
-#### Swap Bitcoin on-chain -> Smart chain
+#### Swap Bitcoin on-chain -> Solana
 
-Initiating & executing the swap.
+NOTE: Solana uses an old swap protocol for Bitcoin on-chain -> Solana swaps, the flow here is different from the one for Starknet and other chains.
+
+Getting swap quote
 
 ```typescript
 const _exactIn = true; //exactIn = true, so we specify the input amount
 const _amount = fromHumanReadableString("0.0001", Tokens.BITCOIN.BTC); //Amount in BTC base units - sats, we can also use a utility function here
 
 //Create the swap: swapping _amount of satoshis of Bitcoin on-chain to SOL
-const swap = await solanaSwapper.create(
-    Tokens.BITCOIN.BTC,
-    Tokens.SOLANA.SOL,
+const swap = await swapper.swap(
+    Tokens.BITCOIN.BTC, //Swap from BTC
+    Tokens.SOLANA.SOL, //Into specified destination token
     _amount,
-    _exactIn
+    _exactIn, //Whether we define an input or output amount
+    undefined, //Source address for the swap, not used for swaps from BTC
+    solanaSigner.getAddress() //Destination address
 );
 
-//Get the amount required to pay, amount to be received and fee
-const amountToBePaidOnBitcoin: string = swap.getInput().amount; //Human readable amount of BTC that needs to be send to the BTC swap address
-const amountToBeReceivedOnSolana: string = swap.getOutput().amount; //Human readable amount SOL that will be received on Solana
-const fee: string = swap.getFee().amountInSrcToken.amount; //Human readable fee in BTC
+//Get the amount required to pay and fee
+const input: string = swap.getInputWithoutFee().toString(); //Input amount excluding fees
+const fee: string = swap.getFee().amountInSrcToken.toString(); //Fees paid on the output
+const inputWithFees: string = swap.getInput().toString(); //Total amount paid including fees
 
-//Get swap offer expiration time
-const expiry: number = swap.getExpiry(); //Expiration time of the swap offer in UNIX milliseconds, swap needs to be initiated before this time
+const output: string = swap.getOutput().toString(); //Total output amount
+
+//Get swap expiration time
+const expiry: number = swap.getQuoteExpiry(); //Expiration time of the swap quote in UNIX milliseconds, swap needs to be initiated before this time
 
 //Get security deposit amount (Human readable amount of SOL that needs to be put down to rent the liquidity from swap intermediary), you will get this deposit back if the swap succeeds
-const securityDeposit: string = swap.getSecurityDeposit().amount;
+const securityDeposit: string = swap.getSecurityDeposit().toString();
 //Get claimer bounty (Human readable amount of SOL reserved as a reward for watchtowers to claim the swap on your behalf)
-const claimerBounty: string = swap.getClaimerBounty().amount;
+const claimerBounty: string = swap.getClaimerBounty().toString();
 
-//Once client is happy with swap offer, we can send a Solana transaction that initiates the swap by opening a bitcoin swap address
-await swap.commit();
+//Get pricing info
+const swapPrice = swap.getPriceInfo().swapPrice; //Price of the current swap (excluding fees)
+const marketPrice = swap.getPriceInfo().marketPrice; //Current market price
+const difference = swap.getPriceInfo().difference; //Difference between the swap price & current market price
+```
 
+Initiating the swap
+
+```typescript
+//Initiate the swap on the destination chain (Solana) by opening up the bitcoin swap address
+await swap.commit(solanaSigner);
+```
+
+or [sign and send transaction manually](#manually-signing-smart-chain-transactions)
+
+Sending bitcoin
+
+```typescript
 //Get the bitcoin address
 const receivingAddressOnBitcoin = swap.getAddress();
 //Get the QR code data (contains the address and amount)
-const qrCodeData = swap.getQrData(); //Data that can be displayed in the form of QR code
-//Get the bitcoin swap address timeout (in UNIX millis), a transaction needs to be made in under this time
-const expiryTime = swap.getTimeoutTime();
+const qrCodeData = swap.getHyperlink(); //Data that can be displayed in the form of QR code
+//Send the exact amount of BTC to the provided address
+```
 
+or get a psbt and sign it
+
+```typescript
+//Or obtain the funded PSBT (input already added) - ready for signing
+const {psbt, signInputs} = await swap.getFundedPsbt({address: "", publicKey: ""});
+for(let signIdx of signInputs) {
+    psbt.signIdx(..., signIdx); //Or pass it to external signer
+}
+const bitcoinTxId = await swap.submitPsbt(psbt);
+```
+
+Waiting for swap execution
+
+```typescript
 try {
     //Wait for the payment to arrive
-    await swap.waitForPayment(
+    await swap.waitForBitcoinTransaction(
         null, null,
         (
             txId: string, //Transaction ID of the received bitcoin transaction
@@ -231,10 +318,10 @@ try {
 
 //Swap should get automatically claimed by the watchtowers, if not we can call swap.claim() ourselves
 try {
-    await swap.waitTillClaimed(timeoutSignal(30*1000));
+  await swap.waitTillClaimed(timeoutSignal(30*1000));
 } catch (e) {
-    //Claim ourselves when automatic claim doesn't happen in 30 seconds
-    await swap.claim();
+  //Claim ourselves when automatic claim doesn't happen in 30 seconds
+  await swap.claim(solanaSigner);
 }
 ```
 
@@ -255,41 +342,181 @@ try {
 - FromBTCSwapState.CLAIM_CLAIMED = 3
   - Swap funds are claimed to the user's wallet
 
+
+#### Swap Bitcoin on-chain -> Starknet
+
+NOTE: Starknet uses a new swap protocol for Bitcoin on-chain -> Solana swaps, the flow here is different from the one for Solana!
+
+Getting swap quote
+
+```typescript
+const _exactIn = true; //exactIn = true, so we specify the input amount
+const _amount = fromHumanReadableString("0.0001", Tokens.BITCOIN.BTC); //Amount in BTC base units - sats, we can also use a utility function here
+
+//Create the swap: swapping _amount of satoshis of Bitcoin on-chain to SOL
+const swap = await swapper.swap(
+    Tokens.BITCOIN.BTC, //Swap from BTC
+    Tokens.STARKNET.STRK, //Into specified destination token
+    _amount,
+    _exactIn, //Whether we define an input or output amount
+    undefined, //Source address for the swap, not used for swaps from BTC
+    starknetSigner.getAddress() //Destination address
+);
+
+//Get the amount required to pay and fee
+const input: string = swap.getInputWithoutFee().toString(); //Input amount excluding fees
+const fee: string = swap.getFee().amountInSrcToken.toString(); //Fees paid on the output
+const inputWithFees: string = swap.getInput().toString(); //Total amount paid including fees
+
+const output: string = swap.getOutput().toString(); //Total output amount
+
+//Get swap expiration time
+const expiry: number = swap.getQuoteExpiry(); //Expiration time of the swap quote in UNIX milliseconds, swap needs to be initiated before this time
+
+//Get pricing info
+const swapPrice = swap.getPriceInfo().swapPrice; //Price of the current swap (excluding fees)
+const marketPrice = swap.getPriceInfo().marketPrice; //Current market price
+const difference = swap.getPriceInfo().difference; //Difference between the swap price & current market price
+```
+
+Initiating the swap
+
+```typescript
+//Obtain the funded PSBT (input already added) - ready for signing
+const {psbt, signInputs} = await swap.getFundedPsbt({address: "", publicKey: ""});
+for(let signIdx of signInputs) {
+    psbt.signIdx(..., signIdx); //Or pass it to external signer
+}
+const bitcoinTxId = await swap.submitPsbt(psbt);
+```
+
+or get raw PSBT and add inputs manually
+
+```typescript
+//Or obtain raw PSBT to which inputs still need to be added
+const {psbt, in1sequence} = await swap.getPsbt();
+psbt.addInput(...);
+//Make sure the second input's sequence (index 1) is as specified in the in1sequence variable
+psbt.updateInput(1, {sequence: in1sequence});
+//Sign the PSBT, sign every input except the first one
+for(let i=1;i<psbt.inputsLength; i++) psbt.signIdx(..., i); //Or pass it to external signer
+//Submit the signed PSBT
+const bitcoinTxId = await swap.submitPsbt(psbt);
+```
+
+Waiting for swap execution
+
+```typescript
+try {
+    //Wait for the payment to arrive
+    await swap.waitForBitcoinTransaction(
+        null, null,
+        (
+            txId: string, //Transaction ID of the received bitcoin transaction
+            confirmations: number, //Current confirmations of the transaction
+            targetConfirmations: number, //Required confirmations
+            transactionETAms: number //Estimated in time (in milliseconds) until when the transaction will receive required amount of confirmations
+        ) => {
+            //Callback for transaction updates
+        }
+    );
+} catch(e) {
+    //Error occurred while waiting for payment, this is most likely due to network errors
+    return;
+}
+
+//Swap should get automatically claimed by the watchtowers, if not we can call swap.claim() ourselves
+try {
+  await swap.waitTillClaimedOrFronted(timeoutSignal(30*1000));
+} catch (e) {
+  //Claim ourselves when automatic claim doesn't happen in 30 seconds
+  await swap.claim(starknetSigner);
+}
+```
+
+##### Swap states
+
+- SpvFromBTCSwapState.CLOSED = -5
+  - Catastrophic failure during swap, shall never happen
+- SpvFromBTCSwapState.FAILED = -4
+  - Bitcoin transaction was sent, but was double-spent later, therefore the swap was failed (no BTC was sent)
+- SpvFromBTCSwapState.DECLINED = -3
+  - LP declined to process the swap transaction, no BTC was sent
+- SpvFromBTCSwapState.QUOTE_EXPIRED = -2
+  - Swap quote expired and cannot be executed anymore
+- SpvFromBTCSwapState.QUOTE_SOFT_EXPIRED = -1
+  - Swap quote soft-expired (i.e. the quote probably expired, but if there is a bitcoin transaction being submitted it might still succeed)
+- SpvFromBTCSwapState.CREATED = 0
+  - Swap quote is created, waiting on user to sign the bitcoin swap transaction
+- SpvFromBTCSwapState.SIGNED = 1
+  - Bitcoin swap transaction was signed by the client
+- SpvFromBTCSwapState.POSTED = 2
+  - Bitcoin swap transaction was posted to the LP
+- SpvFromBTCSwapState.BROADCASTED = 3
+  - LP broadcasted the bitcoin swap transaction
+- SpvFromBTCSwapState.FRONTED = 4
+  - Swap funds have been deposited to the user's wallet in front of the time
+- SpvFromBTCSwapState.BTC_TX_CONFIRMED = 5
+  - Bitcoin swap transaction is confirmed
+- SpvFromBTCSwapState.CLAIM_CLAIMED = 6
+  - Swap funds are claimed to the user's wallet
+
 ### Bitcoin lightning network swaps
 
 #### Swap Smart chain -> Bitcoin lightning network
+
+Getting swap quote
 
 ```typescript
 //Destination lightning network invoice, amount needs to be part of the invoice!
 const _lightningInvoice = "lnbc10u1pj2q0g9pp5ejs6m677m39cznpzum7muruvh50ys93ln82p4j9ks2luqm56xxlshp52r2anlhddfa9ex9vpw9gstxujff8a0p8s3pzvua930js0kwfea6scqzzsxqyz5vqsp5073zskc5qfgp7lre0t6s8uexxxey80ax564hsjklfwfjq2ew0ewq9qyyssqvzmgs6f8mvuwgfa9uqxhtza07qem4yfhn9wwlpskccmuwplsqmh8pdy6c42kqdu8p73kky9lsnl40qha5396d8lpgn90y27ltfc5rfqqq59cya";
 
 //Create the swap: swapping SOL to Bitcoin lightning
-const swap = await solanaSwapper.create(
-    Tokens.SOLANA.SOL,
-    Tokens.BITCOIN.BTCLN,
-    null,
-    false,
-    _lightningInvoice
+const swap = await swapper.swap(
+    Tokens.SOLANA.SOL, //From specified source token
+    Tokens.BITCOIN.BTCLN, //Swap to BTC-LN
+    undefined, //Amount is specified in the lightning network invoice!
+    false, //Make sure we use exactIn=false for swaps to BTC-LN, if you want to use exactIn=true and set an amount, use LNURL-pay!
+    solanaSigner.getAddress(), //Source address and smart chain signer
+    _lightningInvoice //Destination of the swap
 );
 
 //Get the amount required to pay and fee
-const amountToBePaid: string = swap.getInput().amount; //Human readable amount to be paid on the Solana side (including fee)
-const fee: string = swap.getFee().amountInSrcToken.amount; //Human readable swap fee paid on the Solana side (already included in the the above amount)
+const input: string = swap.getInputWithoutFee().toString(); //Input amount excluding fees
+const fee: string = swap.getFee().amountInSrcToken.toString(); //Fees paid on the output
+const inputWithFees: string = swap.getInput().toString(); //Total amount paid including fees
+
+const output: string = swap.getOutput().toString(); //Total output amount
 
 //Get swap expiration time
-const expiry: number = swap.getExpiry(); //Expiration time of the swap in UNIX milliseconds, swap needs to be initiated before this time
+const expiry: number = swap.getQuoteExpiry(); //Expiration time of the swap quote in UNIX milliseconds, swap needs to be initiated before this time
 
+//Get pricing info
+const swapPrice = swap.getPriceInfo().swapPrice; //Price of the current swap (excluding fees)
+const marketPrice = swap.getPriceInfo().marketPrice; //Current market price
+const difference = swap.getPriceInfo().difference; //Difference between the swap price & current market price
+```
+
+Initiating the swap
+
+```typescript
 //Initiate and pay for the swap
-await swap.commit();
+await swap.commit(solanaSigner);
+```
 
+or [sign and send transaction manually](#manually-signing-smart-chain-transactions)
+
+Wait for the swap to execute, refund in case of failure
+
+```typescript
 //Wait for the swap to conclude
 const result: boolean = await swap.waitForPayment();
 if(!result) {
-    //Swap failed, money can be refunded
-    await swap.refund();
+  //Swap failed, money can be refunded
+  await swap.refund(solanaSigner);
 } else {
-    //Swap successful, we can get the lightning payment secret pre-image, which acts as a proof of payment
-    const lightningSecret = swap.getSecret();
+  //Swap successful, we can get the lightning payment secret pre-image, which acts as a proof of payment
+  const lightningSecret = swap.getSecret();
 }
 ```
 
@@ -313,40 +540,78 @@ if(!result) {
     - Swap was initiated but counterparty failed to process it, the user can now refund his funds
 
 #### Swap Bitcoin lightning network -> Smart chain
+
+Getting swap quote
+
 ```typescript
 const _exactIn = true; //exactIn = true, so we specify the input amount
 const _amount = 10000n; //Amount in BTC base units - sats
 
-//Create the swap: swapping _amount of satoshis from Bitcoin lightning network to SOL
-const swap = await solanaSwapper.create(
-    Tokens.BITCOIN.BTCLN,
-    Tokens.SOLANA.SOL,
+const swap = await swapper.swap(
+    Tokens.BITCOIN.BTCLN, //Swap from BTC-LN
+    Tokens.STARKNET.STRK, //Into specified destination token
     _amount,
-    _exactIn
+    _exactIn, //Whether we define an input or output amount
+    undefined, //Source address for the swap, not used for swaps from BTC-LN
+    signer.getAddress() //Destination address
 );
 
 //Get the bitcoin lightning network invoice (the invoice contains pre-entered amount)
-const receivingLightningInvoice: string = swap.getLightningInvoice();
-//Get the QR code (contains the lightning network invoice)
-const qrCodeData: string = swap.getQrData(); //Data that can be displayed in the form of QR code
+const receivingLightningInvoice: string = swap.getAddress();
+//Get the URI hyperlink (contains the lightning network invoice) which can be displayed also as QR code
+const qrCodeData: string = swap.getHyperlink();
 
-//Get the amount required to pay, amount to be received and fee
-const amountToBePaidOnBitcoin: string = swap.getInput().amount; //Human readable amount of BTC that needs to be send to the BTC swap address
-const amountToBeReceivedOnSolana: string = swap.getOutput().amount; //Human readable amount SOL that will be received on Solana
-const fee: string = swap.getFee().amountInSrcToken.amount; //Human readable fee in BTC
+//Get the amount required to pay and fee
+const input: string = swap.getInputWithoutFee().toString(); //Input amount excluding fees
+const fee: string = swap.getFee().amountInSrcToken.toString(); //Fees paid on the output
+const inputWithFees: string = swap.getInput().toString(); //Total amount paid including fees
 
+const output: string = swap.getOutput().toString(); //Total output amount
+
+//Get swap expiration time
+const expiry: number = swap.getQuoteExpiry(); //Expiration time of the swap quote in UNIX milliseconds, swap needs to be initiated before this time
+
+//Get security deposit amount (Human readable amount of STRK that needs to be put down to rent the liquidity from swap intermediary), you will get this deposit back if the swap succeeds
+const securityDeposit: string = swap.getSecurityDeposit().toString();
+
+//Get pricing info
+const swapPrice = swap.getPriceInfo().swapPrice; //Price of the current swap (excluding fees)
+const marketPrice = swap.getPriceInfo().marketPrice; //Current market price
+const difference = swap.getPriceInfo().difference; //Difference between the swap price & current market price
+```
+
+Pay the displayed lightning network invoice from an external wallet
+
+Wait for the payment to be received
+
+```typescript
+//Start listening to incoming lightning network payment
+const success = await swap.waitForPayment();
+if(!success) {
+    //Lightning network payment not received in time and quote expired!
+    return;
+}
+```
+
+Claim the funds on the destination smart chains, this settles the swap and lightning network payment
+
+```typescript
 try {
-    //Wait for the lightning payment to arrive
-    await swap.waitForPayment();
     //Claim the swap funds - this will initiate 2 transactions
-    await swap.commitAndClaim();
-    //Or for e.g. starknet which doesn't support signing 2 transactions at once
-    // await swap.commit();
-    // await swap.claim();
+    if(swap.canCommitAndClaimInOneShot()) {
+      //Some chains (e.g. Solana) support signing multiple transactions in one flow
+      await swap.commitAndClaim(solanaSigner);
+    } else {
+      //Other chains (e.g. Starknet) don't support signing multiple transaction in one flow, therefore you need to sign one-by-one
+      await swap.commit(starknetSigner);
+      await swap.claim(starknetSigner);
+    }
 } catch(e) {
     //Error occurred while waiting for payment
 }
 ```
+
+or [sign and send transactions manually](#manually-signing-smart-chain-transactions)
 
 ##### Swap states
 
@@ -367,6 +632,170 @@ try {
 - FromBTCLNSwapState.CLAIM_CLAIMED = 3
   - Funds were successfully claimed & lightning network secret pre-image revealed, so the lightning network payment will settle now
 
+### LNURLs & readable lightning identifiers
+
+LNURLs extend the lightning network functionality by creating static lightning addreses (LNURL-pay & static internet identifiers) and QR codes which allow you to pull funds from them (LNURL-withdraw)
+
+This SDK supports:
+* LNURL-pay ([LUD-6](https://github.com/lnurl/luds/blob/luds/06.md), [LUD-9](https://github.com/lnurl/luds/blob/luds/09.md), [LUD-10](https://github.com/lnurl/luds/blob/luds/10.md), [LUD-12](https://github.com/lnurl/luds/blob/luds/12.md))
+* LNURL-withdraw ([LUD-3](https://github.com/lnurl/luds/blob/luds/03.md))
+* Static internet identifiers ([LUD-16](https://github.com/lnurl/luds/blob/luds/16.md))
+
+You can parse LNURLs and lightning invoices automatically using the [Unified address parser](#unified-address-parser)
+
+#### Differences
+
+Lightning invoices:
+* One time use only
+* Need to have a fixed amount, therefore recipient has to set the amount
+* Static and bounded expiration
+* You can only pay to a lightning invoice, not withdraw funds from it
+
+LNURLs & lightning identifiers:
+* Reusable
+* Programmable expiry
+* Allows payer to set an amount
+* Supports both, paying (LNURL-pay) and withdrawing (LNURL-withdraw)
+* Possibility to attach a message/comment to a payment
+* Receive a message/url as a result of the payment
+
+#### Swap Smart chain -> Bitcoin lightning network
+
+Getting swap quote
+
+```typescript
+const _lnurlOrIdentifier: string = "lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhkx6rfvdjx2ctvxyesuk0a27"; //Destination LNURL-pay or readable identifier
+const _exactIn = false; //exactIn = false, so we specify the output amount
+const _amount: bigint = 10000n; //Amount of satoshis to send (1 BTC = 100 000 000 satoshis)
+
+//Create the swap: swapping SOL to Bitcoin lightning
+const swap = await swapper.swap(
+    Tokens.SOLANA.SOL, //From specified source token
+    Tokens.BITCOIN.BTCLN, //Swap to BTC-LN
+    _amount, //Now we can specify an amount for a lightning network payment!
+    _exactIn, //We can also use exactIn=true here and set an amount in input token
+    solanaSigner.getAddress(), //Source address and smart chain signer
+    _lnurlOrIdentifier, //Destination of the swap
+    {
+        comment: "Hello world" //For LNURL-pay we can also pass a comment to the recipient
+    }
+);
+
+//Get the amount required to pay and fee
+const input: string = swap.getInputWithoutFee().toString(); //Input amount excluding fees
+const fee: string = swap.getFee().amountInSrcToken.toString(); //Fees paid on the output
+const inputWithFees: string = swap.getInput().toString(); //Total amount paid including fees
+
+const output: string = swap.getOutput().toString(); //Total output amount
+
+//Get swap expiration time
+const expiry: number = swap.getQuoteExpiry(); //Expiration time of the swap quote in UNIX milliseconds, swap needs to be initiated before this time
+
+//Get pricing info
+const swapPrice = swap.getPriceInfo().swapPrice; //Price of the current swap (excluding fees)
+const marketPrice = swap.getPriceInfo().marketPrice; //Current market price
+const difference = swap.getPriceInfo().difference; //Difference between the swap price & current market price
+```
+
+Initiating the swap
+
+```typescript
+//Initiate and pay for the swap
+await swap.commit(solanaSigner);
+```
+
+or [sign and send transaction manually](#manually-signing-smart-chain-transactions)
+
+Wait for the swap to execute, refund in case of failure
+
+```typescript
+//Wait for the swap to conclude
+const result: boolean = await swap.waitForPayment();
+if(!result) {
+  //Swap failed, money can be refunded
+  await swap.refund(solanaSigner);
+} else {
+  //Swap successful, we can get the lightning payment secret pre-image, which acts as a proof of payment
+  const lightningSecret = swap.getSecret();
+  //In case the LNURL contained a success action, we can read it now and display it to user
+  if(swap.hasSuccessAction()) {
+    //Contains a success action that should displayed to the user
+    const successMessage = swap.getSuccessAction();
+    const description: string = successMessage.description; //Description of the message
+    const text: (string | null) = successMessage.text; //Main text of the message
+    const url: (string | null) = successMessage.url; //URL link which should be displayed
+  }
+}
+```
+
+#### Swap Bitcoin lightning network -> Smart chain
+
+Getting swap quote
+
+```typescript
+const _lnurl: string = "lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhkx6rfvdjx2ctvxyesuk0a27"; //Destination LNURL-pay or readable identifier
+const _exactIn = true; //exactIn = true, so we specify the input amount
+const _amount = 10000n; //Amount in BTC base units - sats
+
+const swap = await swapper.swap(
+    Tokens.BITCOIN.BTCLN, //Swap from BTC-LN
+    Tokens.STARKNET.STRK, //Into specified destination token
+    _amount,
+    _exactIn, //Whether we define an input or output amount
+    _lnurl, //Source LNURL for the swap
+    signer.getAddress() //Destination address
+);
+
+//Get the amount required to pay and fee
+const input: string = swap.getInputWithoutFee().toString(); //Input amount excluding fees
+const fee: string = swap.getFee().amountInSrcToken.toString(); //Fees paid on the output
+const inputWithFees: string = swap.getInput().toString(); //Total amount paid including fees
+
+const output: string = swap.getOutput().toString(); //Total output amount
+
+//Get swap expiration time
+const expiry: number = swap.getQuoteExpiry(); //Expiration time of the swap quote in UNIX milliseconds, swap needs to be initiated before this time
+
+//Get security deposit amount (Human readable amount of STRK that needs to be put down to rent the liquidity from swap intermediary), you will get this deposit back if the swap succeeds
+const securityDeposit: string = swap.getSecurityDeposit().toString();
+
+//Get pricing info
+const swapPrice = swap.getPriceInfo().swapPrice; //Price of the current swap (excluding fees)
+const marketPrice = swap.getPriceInfo().marketPrice; //Current market price
+const difference = swap.getPriceInfo().difference; //Difference between the swap price & current market price
+```
+
+Wait for the payment to be received
+
+```typescript
+//Start listening to incoming lightning network payment
+const success = await swap.waitForPayment();
+if(!success) {
+    //Lightning network payment not received in time and quote expired!
+    return;
+}
+```
+
+Claim the funds on the destination smart chains, this settles the swap and lightning network payment
+
+```typescript
+try {
+    //Claim the swap funds - this will initiate 2 transactions
+    if(swap.canCommitAndClaimInOneShot()) {
+      //Some chains (e.g. Solana) support signing multiple transactions in one flow
+      await swap.commitAndClaim(solanaSigner);
+    } else {
+      //Other chains (e.g. Starknet) don't support signing multiple transaction in one flow, therefore you need to sign one-by-one
+      await swap.commit(starknetSigner);
+      await swap.claim(starknetSigner);
+    }
+} catch(e) {
+    //Error occurred while waiting for payment
+}
+```
+
+or [sign and send transactions manually](#manually-signing-smart-chain-transactions)
+
 ### Getting state of the swap
 
 You can get the current state of the swap with:
@@ -385,161 +814,201 @@ swap.events.on("swapState", swap => {
 
 For the meaning of the states please refer to the "Swap state" section under each swap type.
 
-### LNURLs & readable lightning identifiers
+### Swap size limits
 
-LNURLs extend the lightning network functionality by creating static lightning addreses (LNURL-pay & static internet identifiers) and QR codes which allow you to pull funds from them (LNURL-withdraw)
+Swap sizes are limited by the LPs you are connected to, they are advertised in BTC terms by LPs during handshake
 
-This SDK supports:
-* LNURL-pay ([LUD-6](https://github.com/lnurl/luds/blob/luds/06.md), [LUD-9](https://github.com/lnurl/luds/blob/luds/09.md), [LUD-10](https://github.com/lnurl/luds/blob/luds/10.md), [LUD-12](https://github.com/lnurl/luds/blob/luds/12.md))
-* LNURL-withdraw ([LUD-3](https://github.com/lnurl/luds/blob/luds/03.md))
-* Static internet identifiers ([LUD-16](https://github.com/lnurl/luds/blob/luds/16.md))
-
-#### Differences
-
-Lightning invoices:
-* One time use only
-* Need to have a fixed amount, therefore recipient has to set the amount
-* Static and bounded expiration
-* You can only pay to a lightning invoice, not withdraw funds from it
-
-LNURLs & lightning identifiers:
-* Reusable
-* Programmable expiry
-* Allows payer to set an amount
-* Supports both, paying (LNURL-pay) and withdrawing (LNURL-withdraw)
-* Possibility to attach a message/comment to a payment
-* Receive a message/url as a result of the payment
-
-#### Helpers
-
-It is good practice to automatically distinguish between lightning network invoices & LNURLs and adjust the UI accordingly.
-Therefore there are a few helper functions to help with that:
 ```typescript
-const isLNInvoice: boolean = swapper.isValidLightningInvoice(_input); //Checks if the input is lightning network invoice
-const isLNURL: boolean = swapper.isValidLNURL(_input); //Checks if the input is LNURL or lightning identifier
-if(isLNURL) {
-    //Get the type of the LNURL
-    const result: (LNURLPay | LNURLWithdraw | null) = await swapper.getLNURLTypeAndData(_input);
-    if(result.type==="pay") {
-        const lnurlPayData: LNURLPay = result;
-        const minPayable: bigint = lnurlPayData.min; //Minimum payment amount in satoshis
-        const maxPayable: bigint = lnurlPayData.max; //Maximum payment amount in satoshis
-        const icon: (string | null) = lnurlPayData.icon; //URL encoded icon that should be displayed on the UI
-        const shortDescription: (string | null) = lnurlPayData.shortDescription; //Short description of the payment
-        const longDescription: (string | null) = lnurlPayData.longDescription; //Long description of the payment
-        const maxCommentLength: (number | 0) = lnurlPayData.commentMaxLength; //Maximum allowed length of the payment message/comment (0 means no comment allowed)
-        //Should show a UI displaying the icon, short description, long description, allowing the user to choose an amount he wishes to pay and possibly also a comment
-    }
-    if(result.type==="withdraw") {
-        const lnurlWithdrawData: LNURLWithdraw = result;
-        const minWithdrawable: bigint = lnurlWithdrawData.min;
-        const maxWithdrawable: bigint = lnurlWithdrawData.max;
-        //Should show a UI allowing the user to choose an amount he wishes to withdraw
-    }
-}
+const swapLimits = swapper.getSwapLimits(srcToken, dstToken);
+const inputMin = swapLimits.input.min;
+const inputMax = swapLimits.input.max;
+const outputMin = swapLimits.output.min;
+const outputMax = swapLimits.output.max;
 ```
 
-#### Swap Smart chain -> Bitcoin lightning network
+NOTE: swap limits denominated in BTC are retrieved from the LPs during initial handshake, however limits in other tokens are only returned when getting a quote fails due to amount being too low or too high. For example if you want to get swap limits for the BTC -> SOL swap, the input limits will be immediately available, while the output limits will only get populated once a quote request fails due to amount being too low or high.
+
 ```typescript
-const _lnurlOrIdentifier: string = "lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhkx6rfvdjx2ctvxyesuk0a27"; //Destination LNURL-pay or readable identifier
-const _exactIn = false; //exactIn = false, so we specify the output amount
-const _amount: bigint = 10000n; //Amount of satoshis to send (1 BTC = 100 000 000 satoshis)
+let swapLimits = swapper.getSwapLimits(Tokens.BITCOIN.BTC, Tokens.SOLANA.SOL);
+let inputMin = swapLimits.input.min; //Immediately available
+let inputMax = swapLimits.input.max; //Immediately available
+let outputMin = swapLimits.output.min; //Not available from the get-go
+let outputMax = swapLimits.output.max; //Not available from the get-go
 
-//Create the swap: swapping SOL to Bitcoin lightning
-const swap = await solanaSwapper.create(
-    Tokens.SOLANA.SOL,
-    Tokens.BITCOIN.BTCLN,
-    _amount,
-    _exactIn,
-    _lnurlOrIdentifier
-);
+//You can also listen to swap limit changes (optional)
+swapper.on("swapLimitsChanged", () => {
+    //New limits available with swapper.getSwapLimits(srcToken, dstToken)
+    //Useful in e.g. a react application where you want to dynamically set min/max swappable amount
+})
 
-//Get the amount required to pay and fee
-const amountToBePaid: string = swap.getInput().amount; //Human readable amount to be paid on the Solana side (including fee)
-const fee: string = swap.getFee().amountInSrcToken.amount; //Human readable swap fee paid on the Solana side (already included in the the above amount)
-
-//Get swap expiration time
-const expiry: number = swap.getExpiry(); //Expiration time of the swap in UNIX milliseconds, swap needs to be initiated before this time
-
-//Initiate and pay for the swap
-await swap.commit();
-
-//Wait for the swap to conclude
-const result: boolean = await swap.waitForPayment();
-if(!result) {
-    //Swap failed, money can be refunded
-    await swap.refund();
-} else {
-    //Swap successful, we can get the lightning payment secret pre-image, which acts as a proof of payment
-    const lightningSecret = swap.getSecret();
-    //In case the LNURL contained a success action, we can read it now and display it to user
-    if(swap.hasSuccessAction()) {
-        //Contains a success action that should displayed to the user
-        const successMessage = swap.getSuccessAction();
-        const description: string = successMessage.description; //Description of the message
-        const text: (string | null) = successMessage.text; //Main text of the message
-        const url: (string | null) = successMessage.url; //URL link which should be displayed
-    }
-}
-```
-
-#### Swap Bitcoin lightning network -> Smart chain
-```typescript
-const _lnurl: string = "lnurl1dp68gurn8ghj7ampd3kx2ar0veekzar0wd5xjtnrdakj7tnhv4kxctttdehhwm30d3h82unvwqhkx6rfvdjx2ctvxyesuk0a27"; //Destination LNURL-pay or readable identifier
-const _exactIn = true; //exactIn = true, so we specify the input amount
-const _amount = 10000n; //Amount in BTC base units - sats
-
-//Create the swap: swapping _amount of satoshis from Bitcoin lightning network to SOL
-const swap = await solanaSwapper.create(
-    Tokens.BITCOIN.BTCLN,
-    Tokens.SOLANA.SOL,
-    _amount,
-    _exactIn,
-    _lnurl
-);
-
-//Get the amount of BTC to be withdrawn from LNURL, amount to be received and fee
-const amountToBeWithdrawnOnBitcoin: string = swap.getInput().amount; //Human readable amount of BTC that will be withdrawn from the LNURL
-const amountToBeReceivedOnSolana: string = swap.getOutput().amount; //Human readable amount SOL that will be received on Solana
-const fee: string = swap.getFee().amountInSrcToken.amount; //Human readable fee in BTC
-
+//Try to swap really small amount of SOL with exactOut swap
 try {
-    //Submit the withdraw request & wait for the payment to arrive
-    await swap.waitForPayment();
-    //Claim the swap funds - this will initiate 2 transactions
-    await swap.commitAndClaim();
-    //Or for e.g. starknet which doesn't support signing 2 transactions at once
-    // await swap.commit();
-    // await swap.claim();
-} catch(e) {
-    //Error occurred while waiting for payment
+    const swap = await swapper.swap(
+        Tokens.BITCOIN.BTC, //Swap from BTC
+        Tokens.SOLANA.SOL, //Into specified destination token
+        1n, //1 lamport = 0.000000001 SOL
+        false, //Whether we define an input or output amount
+        undefined, //Source address for the swap, not used for swaps from BTC
+        solanaSigner.getAddress() //Destination address
+    );
+} catch (e) {
+    //Fails with OutOfBoundsError
 }
+
+swapLimits = swapper.getSwapLimits(Tokens.BITCOIN.BTC, Tokens.SOLANA.SOL);
+inputMin = swapLimits.input.min; //Immediately available
+inputMax = swapLimits.input.max; //Immediately available
+outputMin = swapLimits.output.min; //Now available due to failed quote
+outputMax = swapLimits.output.max; //Now available due to failed quote
 ```
 
-### Get refundable swaps
+### Stored swaps
+
+#### Get swap by ID
+
+You can retrieve a swap by it's id, you can get an ID of the swap with
+
+```typescript
+const swapId = swap.getId();
+```
+
+And then later retrieve it from the storage
+
+```typescript
+const swap = await swapper.getSwapById(id);
+```
+
+#### Get refundable swaps
 You can refund the swaps in one of two cases:
 * In case intermediary is non-cooperative and goes offline, you can claim the funds from the swap contract back after some time.
 * In case intermediary tried to pay but was unsuccessful, so he sent you signed message with which you can refund now without waiting.
 
 This call can be checked on every startup and periodically every few minutes.
 ```typescript
-//Get the swaps
-const refundableSwaps = await solanaSwapper.getRefundableSwaps();
-//Refund all the swaps
-for(let swap of refundableSwaps) {
-    await swap.refund();
-}
+//Get refundable swaps and refund them
+const refundableSolanaSwaps = await swapper.getRefundableSwaps("SOLANA", solanaSigner.getAddress());
+for(let swap of refundableSolanaSwaps) await swap.refund(solanaSigner);
+const refundableStarknetSwaps = await swapper.getRefundableSwaps("STARKNET", starknetSigner.getAddress());
+for(let swap of refundableStarknetSwaps) await swap.refund(starknetSigner);
 ```
 
-### Get claimable swaps
+#### Get claimable swaps
 Returns swaps that are ready to be claimed by the client, this can happen if client closes the application when a swap is in-progress and the swap is concluded while the client is offline.
 
 ```typescript
 //Get the swaps
-const claimableSwaps = await solanaSwapper.getClaimableSwaps();
+const claimableSolanaSwaps = await solanaSwapper.getClaimableSwaps("SOLANA", solanaSigner.getAddress());
 //Claim all the claimable swaps
-for(let swap of claimableSwaps) {
-    if(swap.canCommit()) await swap.commit(); //This is for Bitcoin (lightning) -> Smart chain swaps, where commit & claim procedure might be needed
-    await swap.claim();
+for(let swap of claimableSolanaSwaps) {
+    if(swap.canCommit()) await swap.commit(solanaSigner); //This is for Bitcoin (lightning) -> Smart chain swaps, where commit & claim procedure might be needed
+    await swap.claim(solanaSigner);
 }
+//Get the swaps
+const claimableStarknetSwaps = await solanaSwapper.getClaimableSwaps("STARKNET", starknetSigner.getAddress());
+//Claim all the claimable swaps
+for(let swap of claimableStarknetSwaps) {
+  if(swap.canCommit()) await swap.commit(starknetSigner); //This is for Bitcoin (lightning) -> Smart chain swaps, where commit & claim procedure might be needed
+  await swap.claim(starknetSigner);
+}
+```
+
+### Helpers
+
+#### Getting wallet balances
+
+The SDK also contains helper functions for getting the maximum spendable balance of wallets
+
+```typescript
+//Spendable balance of the starknet wallet address (discounting transaction fees)
+const strkBalance = await swapper.Utils.getSpendableBalance(starknetSigner, Tokens.STARKNET.STRK);
+//Spendable balance of the solana wallet address (discounting transaction fees)
+const solBalance = await swapper.Utils.getSpendableBalance(solanaSigner, Tokens.SOLANA.SOL);
+//Spendable balance of the bitcoin wallet - here we also need to specify the destination chain (as there are different swap protocols available with different on-chain footprints)
+const {balance: btcBalance, feeRate: btcFeeRate} = await swapper.Utils.getBitcoinSpendableBalance(bitcoinWalletAddress, "SOLANA");
+```
+
+#### Unified address parser
+
+A common way for parsing all address formats supported by the SDK, automatically recognizes:
+- Bitcoin on-chain L1 address formats (p2pkh, p2wpkh, p2wsh, p2wsh, p2tr)
+- [BIP-21](https://en.bitcoin.it/wiki/BIP_0021) bitcoin payment URI
+- BOLT11 lightning network invoices
+- [LUD-6](https://github.com/lnurl/luds/blob/luds/06.md) LNURL-pay links
+- [LUD-3](https://github.com/lnurl/luds/blob/luds/03.md) LNURL-withdraw links
+- [LUD-16](https://github.com/lnurl/luds/blob/luds/16.md) Lightning static internet identifiers 
+- Smart chain addresses (Solana, Starknet, etc.)
+
+```typescript
+const res = await swapper.Utils.parseAddress(address);
+switch(res.type) {
+  case "BITCOIN":
+    //Bitcoin on-chain L1 address or BIP-21 URI scheme with amount
+    const btcAmount = res.amount;
+    break;
+  case "LIGHTNING":
+    //BOLT11 lightning network invoice with pre-set amount
+    const lnAmount = res.amount;
+    break;
+  case "LNURL":
+    //LNURL payment or withdrawal link
+    if(isLNURLWithdraw(res.lnurl)) {
+      //LNURL-withdraw allowing withdrawals over the lightning network
+      const lnurlWithdrawData: LNURLWithdraw = res.lnurl;
+      const minWithdrawable = res.min; //Minimum payment amount
+      const maxWithdrawable = res.max; //Maximum payment amount
+      const fixedAmount = res.amount; //If res.min===res.max, an fixed amount is returned instead
+      //Should show a UI allowing the user to choose an amount he wishes to withdraw
+    }
+    if(isLNURLPay(res.lnurl)) {
+      //LNURL-pay or static lightning internet identifier allowing repeated payments over the lightning network
+      const lnurlPayData: LNURLPay = res.lnurl;
+      const minPayable = res.min; //Minimum payment amount
+      const maxPayable = res.max; //Maximum payment amount
+      const fixedAmount = res.amount; //If res.min===res.max, an fixed amount is returned instead
+      const icon: (string | null) = res.lnurl.icon; //URL encoded icon that should be displayed on the UI
+      const shortDescription: (string | null) = res.lnurl.shortDescription; //Short description of the payment
+      const longDescription: (string | null) = res.lnurl.longDescription; //Long description of the payment
+      const maxCommentLength: (number | 0) = res.lnurl.commentMaxLength; //Maximum allowed length of the payment message/comment (0 means no comment allowed)
+      //Should show a UI displaying the icon, short description, long description, allowing the user to choose an amount he wishes to pay and possibly also a comment
+    }
+    break;
+  default:
+    //Addresses for smart chains
+    break;
+}
+```
+
+### Manually signing smart chain transactions
+
+You can also sign the transactions on smart chain side (Solana, Starknet, etc.) of the SDK externally by a separate wallet. Each function which executes any transaction has its txs(action) counterpart, e.g.:
+- commit() -> txsCommit()
+- claim() -> txsClaim()
+- commitAndClaim -> txsCommitAndClaim()
+- refund() -> txsRefund()
+
+After sending the transactions, you also need to make sure the SDK has enough time to receive an event notification of the transaction being executed, for this you have the waitTill(action) functions, e.g.:
+
+- commit() -> waitTillCommited()
+- claim() -> waitTillClaimed()
+- commitAndClaim -> waitTillClaimed()
+- refund() -> waitTillRefunded()
+
+```typescript
+//Example for Solana
+const txns = await swap.txsCommit(); //Also works with txsClaim, txsRefund, txCommitAndClaim
+txns.forEach(val => val.tx.sign(...val.signers));
+const signedTransactions = await solanaSigner.wallet.signAllTransactions(txns.map(val => val.tx));
+for(let tx of signedTransactions) {
+    const res = await solanaRpc.sendRawTransaction(tx.serialize());
+    await solanaRpc.confirmTransaction(res);
+}
+await swap.waitTillCommited(); //Or other relevant waitTillClaimed, waitTillRefunded
+
+//Example for Starknet
+const txns = await swap.txsCommit(); //Also works with txsClaim, txsRefund, txCommitAndClaim
+for(let tx of txns) {
+    if(tx.type==="INVOKE") await starknetSigner.account.execute(tx.tx, tx.details);
+    if(tx.type==="DEPLOY_ACCOUNT") await starknetSigner.account.deployAccount(tx.tx, tx.details);
+}
+await swap.waitTillCommited(); //Or other relevant waitTillClaimed, waitTillRefunded
 ```
