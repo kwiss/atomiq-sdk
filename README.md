@@ -40,6 +40,7 @@ npm install @atomiqlabs/chain-starknet
 - [Helpers](#helpers)
   - [Wallet spendable balance](#getting-wallet-balances)
   - [Unified address parsers](#unified-address-parser)
+- [Customize swapper instance](#additional-swapper-options)
 
 ### Preparations
 
