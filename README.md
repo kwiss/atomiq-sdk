@@ -2,6 +2,8 @@
 
 A typescript multichain client for atomiqlabs trustlesss cross-chain swaps. Enables trustless swaps between smart chains (Solana, EVM, Starknet, etc.) and bitcoin (on-chain - L1 and lightning network - L2).
 
+Example SDK integration in NodeJS available [here](https://github.com/atomiqlabs/atomiq-sdk-demo/blob/main/src/index.ts)
+
 ## Installation
 ```
 npm install @atomiqlabs/sdk
@@ -17,6 +19,27 @@ npm install @atomiqlabs/chain-starknet
 ```
 
 ## How to use?
+
+- [Preparations](#preparations)
+- [Setting up signers](#signer)
+- [Initialization](#initialization)
+- Swaps:
+  - [Smart Chain -> BTC L1](#swap-smart-chain---bitcoin-on-chain)
+  - [BTC L1 -> Solana (Old swap protocol)](#swap-bitcoin-on-chain---solana)
+  - [BTC L1 -> Starknet (New swap protocol)](#swap-bitcoin-on-chain---starknet)
+  - [Smart Chain -> BTC Lightning network L2](#swap-smart-chain---bitcoin-lightning-network)
+  - [Smart Chain -> BTC Lightning network L2 (LNURL-pay)](#swap-smart-chain---bitcoin-lightning-network-1)
+  - [BTC Lightning network L2 -> Smart Chain](#swap-bitcoin-lightning-network---smart-chain)
+  - [BTC Lightning network L2 (LNURL-withdraw) -> Smart Chain](#swap-bitcoin-lightning-network---smart-chain-1)
+- [Swap states](#getting-state-of-the-swap)
+- [Swap size limits](#swap-size-limits)
+- [Stored swaps](#stored-swaps)
+  - [Get existing swaps](#get-swap-by-id)
+  - [Refundable swaps](#get-refundable-swaps)
+  - [Claimable swaps](#get-claimable-swaps)
+- [Helpers](#helpers)
+  - [Wallet spendable balance](#getting-wallet-balances)
+  - [Unified address parsers](#unified-address-parser)
 
 ### Preparations
 
@@ -58,6 +81,8 @@ const swapper = Factory.newSwapper({
 });
 ```
 
+if you want to use custom pricing api, mempool.space RPC url, or tune HTTP request timeouts check out [additional options](#additional-swapper-options)
+
 #### NodeJS
 
 For NodeJS we need to use sqlite storage, for that we first need to install the sqlite storage adaptor
@@ -88,6 +113,8 @@ const swapper = Factory.newSwapper({
     chainStorageCtor: name => new SqliteStorageManager("STORE_"+name+".sqlite3"),
 });
 ```
+
+if you want to use custom pricing api, mempool.space RPC url, or tune HTTP request timeouts check out [additional options](#additional-swapper-options)
 
 ### Signer
 
@@ -360,7 +387,10 @@ const swap = await swapper.swap(
     _amount,
     _exactIn, //Whether we define an input or output amount
     undefined, //Source address for the swap, not used for swaps from BTC
-    starknetSigner.getAddress() //Destination address
+    starknetSigner.getAddress(), //Destination address
+    {
+        gasAmount: 1_000_000_000_000_000_000n //We can also request a gas drop on the destination chain (here requesting 1 STRK)
+    }
 );
 
 //Get the amount required to pay and fee
@@ -1011,4 +1041,33 @@ for(let tx of txns) {
     if(tx.type==="DEPLOY_ACCOUNT") await starknetSigner.account.deployAccount(tx.tx, tx.details);
 }
 await swap.waitTillCommited(); //Or other relevant waitTillClaimed, waitTillRefunded
+```
+
+### Additional swapper options
+
+You can further customize the swapper instance with these options, you can:
+- adjust the maximum accepted pricing difference from the LPs
+- use custom mempool.space instance
+- use custom pricing API
+- use own LP node for swaps
+- adjust HTTP request timeouts
+- add parameters to be sent with each LP request
+
+```typescript
+const swapper = Factory.newSwapper({
+    ...
+    //Additional optional options
+    pricingFeeDifferencePPM: 20000n, //Maximum allowed pricing difference for quote (between swap & market price) in ppm (parts per million) (20000 == 2%)
+    mempoolApi: new MempoolApi("<url to custom mempool.space instance>"), //Set the SDK to use a custom mempool.space instance instead of the public one
+    getPriceFn: (tickers: string[], abortSignal?: AbortSignal) => customPricingApi.getUsdPriceForTickers(tickers) //Overrides the default pricing API engine with a custom price getter
+
+    intermediaryUrl: "<url to custom LP node>",
+    registryUrl: "<url to custom LP node registry>",
+
+    getRequestTimeout: 10000, //Timeout in milliseconds for GET requests
+    postRequestTimeout: 10000, //Timeout in milliseconds for POST requests
+    defaultAdditionalParameters: {lpData: "Pls give gud price"}, //Additional request data sent to LPs
+
+    defaultTrustedIntermediaryUrl: "<url to custom LP node>" //LP node/intermediary to use for trusted gas swaps
+});
 ```
