@@ -21,7 +21,7 @@
   "author": "adambor",
   "license": "ISC",
   "dependencies": {
-    "@atomiqlabs/base": "^9.0.0",
+    "@atomiqlabs/base": "github:kwiss/atomiq-base",
     "@atomiqlabs/sdk-lib": "^13.0.0"
   },
   "devDependencies": {
